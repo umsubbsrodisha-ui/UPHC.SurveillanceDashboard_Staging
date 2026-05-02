@@ -2,6 +2,8 @@ wwwroot\app.css
 wwwroot\css\site.css
 wwwroot\css\tv.css
 wwwroot\favicon.png
+wwwroot\images\emblem.png
+wwwroot\images\idsp-logo.png
 wwwroot\images\user.png
 wwwroot\js\site.js
 wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
