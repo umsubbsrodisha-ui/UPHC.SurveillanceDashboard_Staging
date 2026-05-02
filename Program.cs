@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using UPHC.SurveillanceDashboard.Components;
 using UPHC.SurveillanceDashboard.Data;
 using UPHC.SurveillanceDashboard.Hubs;
 using UPHC.SurveillanceDashboard.Models;
@@ -13,7 +14,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 
-builder.Services.AddServerSideBlazor();
+// ✅ Modern .NET 8/9/10 Blazor
+builder.Services.AddRazorComponents()
+    .AddInteractiveServerComponents();
 
 // PostgreSQL
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
@@ -59,13 +62,18 @@ app.UseAuthentication();
 
 app.UseAuthorization();
 
-app.MapRazorPages();
 
-app.MapBlazorHub();
+// =========================
+// ENDPOINTS
+// =========================
+
+app.MapRazorPages();
 
 app.MapHub<NotificationHub>("/notificationHub");
 
-app.MapFallbackToPage("/_Host");
+// ✅ Modern Blazor App Mapping
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 
 // =========================
@@ -201,6 +209,10 @@ if (app.Environment.IsDevelopment())
             {
                 facilityId = 24;
             }
+            else if (u.Role == "UHWCUser")
+            {
+                facilityId = 27;
+            }
 
             var user = new ApplicationUser
             {
@@ -230,6 +242,281 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//using Microsoft.AspNetCore.Identity;
+//using Microsoft.EntityFrameworkCore;
+//using UPHC.SurveillanceDashboard.Data;
+//using UPHC.SurveillanceDashboard.Hubs;
+//using UPHC.SurveillanceDashboard.Models;
+//using UPHC.SurveillanceDashboard.Services;
+
+//var builder = WebApplication.CreateBuilder(args);
+
+//// =========================
+//// SERVICES
+//// =========================
+
+//builder.Services.AddRazorPages();
+
+//builder.Services.AddServerSideBlazor();
+
+//// PostgreSQL
+//builder.Services.AddDbContextFactory<AppDbContext>(options =>
+//    options.UseNpgsql(
+//        builder.Configuration.GetConnectionString("DefaultConnection")
+//    ));
+
+//// Identity + Roles
+//builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+//{
+//    options.SignIn.RequireConfirmedAccount = false;
+//})
+//.AddRoles<IdentityRole>()
+//.AddEntityFrameworkStores<AppDbContext>();
+
+//// SignalR
+//builder.Services.AddSignalR();
+
+//// Custom Services
+//builder.Services.AddScoped<NotificationService>();
+
+//var app = builder.Build();
+
+
+//// =========================
+//// PIPELINE
+//// =========================
+
+//if (!app.Environment.IsDevelopment())
+//{
+//    app.UseExceptionHandler("/Error");
+
+//    app.UseHsts();
+//}
+
+//app.UseHttpsRedirection();
+
+//app.UseStaticFiles();
+
+//app.UseRouting();
+
+//app.UseAuthentication();
+
+//app.UseAuthorization();
+
+//app.MapRazorPages();
+
+//app.MapBlazorHub();
+
+//app.MapHub<NotificationHub>("/notificationHub");
+
+//app.MapFallbackToPage("/_Host");
+
+
+//// =========================
+//// DEV ONLY MIGRATION + SEEDING
+//// =========================
+
+//if (app.Environment.IsDevelopment())
+//{
+//    using var scope = app.Services.CreateScope();
+
+//    var services = scope.ServiceProvider;
+
+//    var context =
+//        services.GetRequiredService<AppDbContext>();
+
+//    var roleManager =
+//        services.GetRequiredService<RoleManager<IdentityRole>>();
+
+//    var userManager =
+//        services.GetRequiredService<UserManager<ApplicationUser>>();
+
+//    // =========================
+//    // APPLY MIGRATIONS
+//    // =========================
+
+//    await context.Database.MigrateAsync();
+
+
+//    // =========================
+//    // ROLES
+//    // =========================
+
+//    string[] roles =
+//    {
+//        "Admin",
+//        "Analyst",
+//        "UPHCUser",
+//        "CHCUser",
+//        "UHWCUser",
+//        "NodalOfficer",
+//        "AddlnCommissioner",
+//        "MD",
+//        "Commissioner",
+//        "JdAdmin"
+//    };
+
+//    foreach (var role in roles)
+//    {
+//        if (!await roleManager.RoleExistsAsync(role))
+//        {
+//            await roleManager.CreateAsync(
+//                new IdentityRole(role));
+//        }
+//    }
+
+
+//    // =========================
+//    // ADMIN USER
+//    // =========================
+
+//    var adminUser =
+//        await userManager.FindByNameAsync("admin");
+
+//    if (adminUser == null)
+//    {
+//        var user = new ApplicationUser
+//        {
+//            UserName = "admin",
+//            Email = "admin@umsu.com",
+//            EmailConfirmed = true
+//        };
+
+//        var result = await userManager.CreateAsync(
+//            user,
+//            "Admin@123!"
+//        );
+
+//        if (result.Succeeded)
+//        {
+//            await userManager.AddToRoleAsync(
+//                user,
+//                "Admin"
+//            );
+//        }
+//    }
+
+
+//    // =========================
+//    // DEV USERS
+//    // =========================
+
+//    var usersToSeed = new List<
+//        (string Username,
+//         string Email,
+//         string Password,
+//         string Role)>
+//    {
+//        ("analyst", "analyst@umsu.com", "Analyst@123!", "Analyst"),
+
+//        ("uphcuser", "uphc@umsu.com", "UPHC@123!", "UPHCUser"),
+
+//        ("chcuser", "chc@umsu.com", "CHC@123!", "CHCUser"),
+
+//        ("uhwcuser", "uhwc@umsu.com", "UHWC@123!", "UHWCUser"),
+
+//        ("nodal", "nodal@umsu.com", "Nodal@123!", "NodalOfficer"),
+
+//        ("addlncomm", "addln@umsu.com", "Addln@123!", "AddlnCommissioner"),
+
+//        ("md", "md@umsu.com", "MD@123!", "MD"),
+
+//        ("commissioner", "comm@umsu.com", "Comm@123!", "Commissioner"),
+
+//        ("jdadmin", "jd@umsu.com", "JD@123!", "JdAdmin")
+//    };
+
+//    foreach (var u in usersToSeed)
+//    {
+//        var existingUser =
+//            await userManager.FindByNameAsync(u.Username);
+
+//        if (existingUser == null)
+//        {
+//            int? facilityId = null;
+
+//            // Facility mapping
+
+//            if (u.Role == "CHCUser")
+//            {
+//                facilityId = 1;
+//            }
+//            else if (u.Role == "UPHCUser")
+//            {
+//                facilityId = 24;
+//            }
+
+//            var user = new ApplicationUser
+//            {
+//                UserName = u.Username,
+
+//                Email = u.Email,
+
+//                EmailConfirmed = true,
+
+//                FacilityId = facilityId
+//            };
+
+//            var result = await userManager.CreateAsync(
+//                user,
+//                u.Password
+//            );
+
+//            if (result.Succeeded)
+//            {
+//                await userManager.AddToRoleAsync(
+//                    user,
+//                    u.Role
+//                );
+//            }
+//        }
+//    }
+//}
+
+//app.Run();
 
 
 
