@@ -1,0 +1,175 @@
+﻿@page "/case-edit/{id:int}"
+@attribute [Authorize(Roles = "UPHCUser")]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
+@using UPHC.SurveillanceDashboard.Services
+
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NotificationService NotifService
+@inject NavigationManager Navigation
+
+<h3>Edit Case Status</h3>
+
+@if (caseRecord == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="card p-4 shadow">
+
+        <p><b>Patient:</b> @caseRecord.PatientName</p>
+        <p><b>Disease:</b> @caseRecord.DiseaseName</p>
+        <p><b>Facility Name:</b> @(caseRecord.Facility?.FacilityName ?? "N/A")</p>
+
+        <!-- ONLY STATUS EDITABLE -->
+        <div class="mb-3">
+            <label>Status</label>
+            <!--enums values are unreadable so use @@bind-value-->
+            <InputSelect @bind-Value="caseRecord.Status"      
+                         TValue="CaseStatus"
+                         class="form-control">
+
+                <option value="Suspected">Suspected</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Negative">Negative</option>
+
+            </InputSelect>
+        </div>
+
+        <button class="btn btn-success"
+                @onclick="HandleUpdate"
+                disabled="@(originalStatus != null && caseRecord.Status == originalStatus)">
+            Save
+        </button>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-info mt-3">@message</div>
+        }
+
+    </div>
+}
+
+@code {
+
+    CaseStatus? originalStatus;
+    [Parameter] public int id { get; set; }
+
+    CaseRecord? caseRecord;
+    string message = "";
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        caseRecord = await db.CaseRecords
+            .Include(c => c.Facility)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (caseRecord != null)
+        {
+            originalStatus = caseRecord.Status; 
+        }
+    }
+
+    // protected override async Task OnParametersSetAsync()
+    // {
+    //     using var db = DbFactory.CreateDbContext();
+
+    //     caseRecord = await db.CaseRecords
+    //         .Include(c => c.UPHC)
+    //         .FirstOrDefaultAsync(c => c.Id == id);
+    // }
+
+    // private void OnStatusChanged(ChangeEventArgs e)
+    // {
+    //     caseRecord.Status = Enum.Parse<CaseStatus>(e.Value.ToString());
+
+    //     if (caseRecord.Status == CaseStatus.Confirmed ||
+    //         caseRecord.Status == CaseStatus.Negative)
+    //     {
+    //         caseRecord.LabConfirmedDate = DateTime.Now;
+    //     }
+    // }
+
+
+
+    private async Task HandleUpdate()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var existing = await db.CaseRecords.FindAsync(caseRecord.Id);
+        if (existing == null) return;
+
+        //  ONLY UPDATE IF STATUS CHANGED
+        if (existing.Status != caseRecord.Status)
+        {
+            existing.Status = caseRecord.Status;
+
+            if (existing.Status == CaseStatus.Confirmed ||
+                existing.Status == CaseStatus.Negative)
+            {
+                existing.LabConfirmedDate = DateTime.Now;
+            }
+
+            await db.SaveChangesAsync();
+
+            //  SEND NOTIFICATION
+            if (existing.Status == CaseStatus.Confirmed)
+            {
+                await NotifService.SendNotification(existing.Id,NotificationType.ConfirmedPositive);
+            }
+            else if (existing.Status == CaseStatus.Negative)
+            {
+                await NotifService.SendNotification(existing.Id,NotificationType.ConfirmedNegative);
+            }
+
+            //  DASHBOARD REFRESH
+            await NotifService.NotifyDashboardUpdate();
+
+            message = "Case updated successfully";
+        }
+        else
+        {
+            message = "No changes made";
+        }
+
+        Navigation.NavigateTo("/dashboard");
+    }
+
+    // private async Task HandleUpdate()
+    // {
+    //     using var db = DbFactory.CreateDbContext();
+
+    //     var existing = await db.CaseRecords.FindAsync(caseRecord.Id);
+    //     if (existing == null) return;
+
+    //     existing.Status = caseRecord.Status;
+    //     existing.LabConfirmedDate = caseRecord.LabConfirmedDate;
+
+    //     await db.SaveChangesAsync();
+
+    //     // SECOND NOTIFICATION
+    //     if (existing.Status == CaseStatus.Confirmed)
+    //     {
+    //         await NotifService.SendNotification(existing.Id, "Confirmed");
+    //     }
+    //     else if (existing.Status == CaseStatus.Negative)
+    //     {
+    //         await NotifService.SendNotification(existing.Id, "Negative");
+    //     }
+
+    //     //  DASHBOARD REFRESH TRIGGER
+    //     await NotifService.NotifyDashboardUpdate();
+
+    //     message = "Case updated successfully";
+
+    //     // optional redirect
+    //     Navigation.NavigateTo("/dashboard");
+    // }
+}

@@ -1,0 +1,140 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="nav flex-column p-2 bg-light" style="width:220px; min-height:100vh;">
+
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+
+    @if (isFacilityUser)
+    {
+        <a href="/patiententry" class="nav-link">Patient Entry</a>
+    }
+
+    @if (isAnalystGroup)
+    {
+        <a href="/records" class="nav-link">Records</a>
+        <a href="/uphc-list" class="nav-link">UPHC List</a>
+    }
+
+</div>
+
+@code {
+    bool isAnalystGroup = false;
+    bool isFacilityUser = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // ❌ Facility users
+        isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        // ✅ Analyst group = everyone except facility users
+        isAnalystGroup = !isFacilityUser;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* <div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">UPHC.SurveillanceDashboard</a>
+    </div>
+</div>
+
+@* <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            </NavLink>
+        </div>
+    </nav>
+</div> *@*@*@
+
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+
+<div class="nav flex-column p-2 bg-light" style="width:220px;">
+
+    <a href="/dashboard" class="nav-link">Dashboard</a>
+
+    @if (isUPHCUser)
+    {
+        <a href="/patiententry" class="nav-link">Patient Entry</a>
+    }
+
+    @if (isAnalyst)
+    {
+        <a href="/records" class="nav-link">Records</a>
+        <a href="/uphc-list" class="nav-link">UPHC List</a>
+    }
+
+</div>
+
+@code {
+    bool isAnalyst = false;
+    bool isUPHCUser = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAnalyst = user.IsInRole("Analyst") || user.IsInRole("Admin");
+        isUPHCUser = user.IsInRole("UPHCUser");
+    }
+} 
+*@

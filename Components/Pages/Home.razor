@@ -1,0 +1,39 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+@inject NavigationManager Navigation
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Navigation.NavigateTo("/dashboard", true);
+        }
+    }
+}
+
+
+@* @inject NavigationManager Navigation
+@page "/"
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/dashboard");  
+    }
+} *@
+
+@* @page "/"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        Navigation.NavigateTo("/dashboard");
+    }
+} *@

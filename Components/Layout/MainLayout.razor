@@ -1,0 +1,1248 @@
+﻿@inherits LayoutComponentBase
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<!-- 🔷 TOP BAR -->
+<div class="d-flex justify-content-between align-items-center px-3 py-2 shadow-sm bg-white">
+
+    <!-- 🧬 TITLE -->
+    <div class="fw-bold fs-4 text-primary">
+        🧬 UMSU Surveillance
+    </div>
+
+    <!-- 👤 PROFILE SECTION -->
+    <div class="position-relative">
+
+        <!-- 👤 PROFILE IMAGE -->
+        <img src="user.png"
+             class="rounded-circle shadow-sm profile-avatar"
+             @onclick="ToggleDropdown" />
+
+        @if (isAnalyst && unreadCount > 0)
+        {
+            <!-- 🔔 NOTIFICATION COUNT -->
+            <div class="notification-count">
+                🔔 @unreadCount
+            </div>
+
+            <!-- 🔴 LIVE DOT -->
+            <span class="notification-dot animate-blink"></span>
+        }
+
+        <!-- 🔽 DROPDOWN -->
+        @if (showDropdown)
+        {
+            <div class="dropdown-menu show notification-dropdown">
+
+                <!-- 👤 USER -->
+                <div class="dropdown-item-text fw-bold text-primary">
+                    @userName
+                </div>
+
+                <div class="dropdown-divider"></div>
+
+                @if (isAnalyst)
+                {
+                    @if (notifications.Count == 0)
+                    {
+                        <div class="dropdown-item-text text-muted">
+                            No notifications
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var n in notifications)
+                        {
+                            <a class="dropdown-item notification-item"
+                                   @onclick="() => OpenCase(n)">
+
+                                <div class="fw-semibold text-danger">
+                                    @n.DiseaseName
+                                </div>
+
+                                <small class="text-muted">
+                                    @(n.Facility?.FacilityName ?? "Unknown Facility")
+                                </small>
+                            </a>
+                        }
+                    }
+
+                    <div class="dropdown-divider"></div>
+                }
+
+                <!-- 🚪 LOGOUT -->
+                <button class="dropdown-item text-danger fw-semibold"
+                        @onclick="Logout">
+                    Logout
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- 🔷 MAIN LAYOUT -->
+<div class="d-flex">
+
+    <!-- 📚 LEFT NAV -->
+    <NavMenu />
+
+    <!-- 📄 PAGE CONTENT -->
+    <div class="flex-fill p-3">
+        @Body
+    </div>
+</div>
+
+@code {
+
+    string userName = "";
+    bool showDropdown = false;
+
+    bool isAnalyst = false;
+
+    int unreadCount = 0;
+
+    List<Notification> notifications = new();
+
+    HubConnection? hubConnection;
+
+    bool isBeeping = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "Guest";
+
+        // ✅ Facility users
+        bool isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        // ✅ Analyst group
+        isAnalyst = !isFacilityUser;
+
+        if (isAnalyst)
+        {
+            if (hubConnection == null)
+            {
+                hubConnection = new HubConnectionBuilder()
+                    .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"))
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                // 🔔 RECEIVE NOTIFICATION
+                hubConnection.On<int, NotificationType, string, string>(
+                    "ReceiveNotification",
+                    async (notificationId, type, disease, facility) =>
+                    {
+                        try
+                        {
+                            using var db = DbFactory.CreateDbContext();
+
+                            var notification = await db.Notifications
+                                .Include(n => n.Facility)
+                                .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+                            if (notification != null)
+                            {
+                                bool isNew = false;
+
+                                // ✅ Prevent duplicate notifications
+                                if (!notifications.Any(n => n.Id == notification.Id))
+                                {
+                                    notifications.Insert(0, notification);
+
+                                    unreadCount++;
+
+                                    isNew = true;
+                                }
+
+                                if (isNew)
+                                {
+                                    // 🔊 START SOUND
+                                    if (!isBeeping)
+                                    {
+                                        isBeeping = true;
+
+                                        await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                                    }
+
+                                    // 🚨 CONFIRMED ALERT
+                                    if (type == NotificationType.ConfirmedPositive)
+                                    {
+                                        await JSRuntime.InvokeVoidAsync(
+                                            "showToast",
+                                            $"CONFIRMED: {disease} at {facility}"
+                                        );
+                                    }
+                                }
+
+                                // 🔄 UI REFRESH
+                                await InvokeAsync(StateHasChanged);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Notification error: {ex.Message}");
+                        }
+                    });
+
+                // 🔄 AUTO RECONNECT
+                hubConnection.Reconnected += async (_) =>
+                {
+                    await hubConnection.SendAsync("JoinAnalystGroup");
+                };
+
+                await hubConnection.StartAsync();
+
+                // ✅ JOIN GROUP
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    // 👤 PROFILE CLICK
+    async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+
+        // ✅ OPENING DROPDOWN
+        if (showDropdown)
+        {
+            // 🔕 Reset unread count
+            unreadCount = 0;
+
+            // 🔇 Stop beep
+            if (isBeeping)
+            {
+                isBeeping = false;
+
+                await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+            }
+        }
+    }
+
+    // 🚪 LOGOUT
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    // 📄 OPEN CASE
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.CaseRecordId}");
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @inherits LayoutComponentBase
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<div class="d-flex justify-content-between align-items-center p-2 shadow-sm bg-white">
+
+    <div class="position-relative">
+
+        <img src="user.png"
+             class="rounded-circle"
+             style="width:45px; cursor:pointer"
+             @onclick="ToggleDropdown" />
+
+        <!-- 🔴 Notification Dot -->
+        @if (isAnalyst && unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger rounded-circle animate-blink"></span>
+        }
+
+        <!-- 🔽 Dropdown -->
+        @if (showDropdown)
+        {
+            <div class="dropdown-menu show" style="right:0; left:auto; width:260px; max-height:300px; overflow:auto;">
+
+                <span class="dropdown-item-text fw-bold">@userName</span>
+                <div class="dropdown-divider"></div>
+
+                @if (isAnalyst)
+                {
+                    @if (notifications.Count == 0)
+                    {
+                        <span class="dropdown-item-text">No notifications</span>
+                    }
+                    else
+                    {
+                        @foreach (var n in notifications)
+                        {
+                            <a class="dropdown-item" @onclick="() => OpenCase(n)">
+                                @(n.Facility?.FacilityName ?? "Unknown Facility") - @n.DiseaseName
+                            </a>
+                        }
+                    }
+
+                    <div class="dropdown-divider"></div>
+                }
+
+                <button class="dropdown-item text-danger" @onclick="Logout">Logout</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="d-flex">
+    <NavMenu />
+    <div class="flex-fill p-3">
+        @Body
+    </div>
+</div>
+
+@code {
+    string userName = "";
+    bool showDropdown = false;
+
+    bool isAnalyst = false;
+
+    int unreadCount = 0;
+    List<Notification> notifications = new();
+
+    HubConnection? hubConnection;
+    bool isBeeping = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "Guest";
+
+        // ✅ EXCLUDE facility users → rest are analyst group
+        bool isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        isAnalyst = !isFacilityUser;
+
+        if (isAnalyst)
+        {
+            // ✅ Avoid duplicate connection
+            if (hubConnection == null)
+            {
+                hubConnection = new HubConnectionBuilder()
+                    .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"))
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                // ✅ RECEIVE NOTIFICATION
+                hubConnection.On<int, NotificationType, string, string>(
+                    "ReceiveNotification",
+                    async (notificationId, type, disease, facility) =>
+                    {
+                        try
+                        {
+                            using var db = DbFactory.CreateDbContext();
+
+                            var notification = await db.Notifications
+                                .Include(n => n.Facility)
+                                .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+                            if (notification != null)
+                            {
+                                bool isNew = false;
+
+                                if (!notifications.Any(n => n.Id == notification.Id))
+                                {
+                                    notifications.Insert(0, notification);
+                                    unreadCount++;
+                                    isNew = true;
+                                }
+
+                                if (isNew)
+                                {
+                                    // 🔊 SOUND
+                                    if (!isBeeping)
+                                    {
+                                        isBeeping = true;
+                                        await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                                    }
+
+                                    // 🚨 ALERT ONLY FOR CONFIRMED
+                                    if (type == NotificationType.ConfirmedPositive)
+                                    {
+                                        await JSRuntime.InvokeVoidAsync(
+                                            "showToast",
+                                            $"CONFIRMED: {disease} at {facility}"
+                                        );
+                                    }
+                                }
+
+                                await InvokeAsync(StateHasChanged);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Notification error: {ex.Message}");
+                        }
+                    });
+
+                // ✅ RECONNECT HANDLING
+                hubConnection.Reconnected += async (_) =>
+                {
+                    await hubConnection.SendAsync("JoinAnalystGroup");
+                };
+
+                await hubConnection.StartAsync();
+
+                // ✅ JOIN ANALYST GROUP
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            }
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+
+        if (showDropdown)
+        {
+            unreadCount = 0;
+
+            if (isBeeping)
+            {
+                isBeeping = false;
+                await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+            }
+        }
+    }
+
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.CaseRecordId}");
+    }
+}
+
+
+
+
+
+
+ *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @inherits LayoutComponentBase
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<div class="d-flex justify-content-between align-items-center p-2 shadow-sm bg-white">
+
+    <div class="position-relative">
+
+        <img src="user.png"
+             class="rounded-circle"
+             style="width:45px; cursor:pointer"
+             @onclick="ToggleDropdown" />
+
+        <!-- 🔴 Notification Dot -->
+        @if (isAnalyst && unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger rounded-circle animate-blink"></span>
+        }
+
+        <!-- 🔽 Dropdown -->
+        @if (showDropdown)
+        {
+            <div class="dropdown-menu show" style="right:0; left:auto; width:260px; max-height:300px; overflow:auto;">
+
+                <span class="dropdown-item-text fw-bold">@userName</span>
+                <div class="dropdown-divider"></div>
+
+                @if (isAnalyst)
+                {
+                    @if (notifications.Count == 0)
+                    {
+                        <span class="dropdown-item-text">No notifications</span>
+                    }
+                    else
+                    {
+                        @foreach (var n in notifications)
+                        {
+                            <a class="dropdown-item" @onclick="() => OpenCase(n)">
+                                @(n.Facility?.FacilityName ?? "Unknown Facility") - @n.DiseaseName
+                            </a>
+                        }
+                    }
+
+                    <div class="dropdown-divider"></div>
+                }
+
+                <button class="dropdown-item text-danger" @onclick="Logout">Logout</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="d-flex">
+    <NavMenu />
+    <div class="flex-fill p-3">
+        @Body
+    </div>
+</div>
+
+@code {
+    string userName = "";
+    bool showDropdown = false;
+
+    bool isAnalyst = false;
+
+    int unreadCount = 0;
+    List<Notification> notifications = new();
+
+    HubConnection? hubConnection;
+    bool isBeeping = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "Guest";
+
+        // ✅ FULL ROLE CHECK (IMPORTANT)
+        isAnalyst =
+            user.IsInRole("Admin") ||
+            user.IsInRole("Analyst") ||
+            user.IsInRole("NodalOfficer") ||
+            user.IsInRole("AddlnCommissioner") ||
+            user.IsInRole("MD") ||
+            user.IsInRole("Commissioner") ||
+            user.IsInRole("JdAdmin");
+
+        if (isAnalyst)
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"))
+                .WithAutomaticReconnect()
+                .Build();
+
+            // ✅ RECEIVE NOTIFICATION (NOW USING ENUM)
+            hubConnection.On<int, NotificationType, string, string>(
+                "ReceiveNotification",
+                async (notificationId, type, disease, facility) =>
+                {
+                    try
+                    {
+                        using var db = DbFactory.CreateDbContext();
+
+                        var notification = await db.Notifications
+                            .Include(n => n.Facility)
+                            .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+                        if (notification != null)
+                        {
+                            bool isNew = false;
+
+                            if (!notifications.Any(n => n.Id == notification.Id))
+                            {
+                                notifications.Insert(0, notification);
+                                unreadCount++;
+                                isNew = true;
+                            }
+
+                            if (isNew)
+                            {
+                                // 🔊 SOUND
+                                if (!isBeeping)
+                                {
+                                    isBeeping = true;
+                                    await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                                }
+
+                                // 🚨 ALERT ONLY FOR CONFIRMED POSITIVE
+                                if (type == NotificationType.ConfirmedPositive)
+                                {
+                                    await JSRuntime.InvokeVoidAsync(
+                                        "showToast",
+                                        $"CONFIRMED: {disease} at {facility}"
+                                    );
+                                }
+                            }
+
+                            await InvokeAsync(StateHasChanged);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Notification error: {ex.Message}");
+                    }
+                });
+
+            // ✅ RECONNECT HANDLING
+            hubConnection.Reconnected += async (_) =>
+            {
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            };
+
+            await hubConnection.StartAsync();//Started connection to SignalR Hub
+
+            // ✅ THIS IS YOUR KEY LINE (YOU ASKED ABOUT THIS)
+            await hubConnection.SendAsync("JoinAnalystGroup");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+
+        if (showDropdown)
+        {
+            unreadCount = 0;
+
+            if (isBeeping)
+            {
+                isBeeping = false;
+                await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+            }
+        }
+    }
+
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.CaseRecordId}");
+    }
+}
+
+
+
+ *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDbContextFactory<AppDbContext> DbFactory
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@using UPHC.SurveillanceDashboard.Models
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+
+
+
+
+<div class="d-flex justify-content-between align-items-center p-2 shadow-sm bg-white">
+
+  
+
+    <div class="position-relative">
+
+        <img src="user.png"
+             class="rounded-circle"
+             style="width:45px; cursor:pointer"
+             @onclick="ToggleDropdown" />
+
+        <!-- 🔴 Notification Dot -->
+        @if (isAnalyst && unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger rounded-circle animate-blink"></span>
+        }
+
+        <!-- 🔽 Dropdown -->
+        @if (showDropdown)
+        {
+            <div class="dropdown-menu show" style="right:0; left:auto; width:260px; max-height:300px; overflow:auto;">
+
+                <span class="dropdown-item-text fw-bold">@userName</span>
+                <div class="dropdown-divider"></div>
+
+                @if (isAnalyst)
+                {
+                    @if (notifications.Count == 0)
+                    {
+                        <span class="dropdown-item-text">No notifications</span>
+                    }
+                    else
+                    {
+                        @foreach (var n in notifications)
+                        {
+                            <a class="dropdown-item" @onclick="() => OpenCase(n)">
+                                @(n.UPHC?.Name ?? "Unknown UPHC") - @n.DiseaseName
+                            </a>
+                        }
+                    }
+
+                    <div class="dropdown-divider"></div>
+                }
+
+                <button class="dropdown-item text-danger" @onclick="Logout">Logout</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="d-flex">
+    <NavMenu />
+    <div class="flex-fill p-3">
+        @Body
+    </div>
+</div>
+
+@code {
+    string userName = "";
+    bool showDropdown = false;
+    bool isAnalyst = false;
+
+    int unreadCount = 0;
+    List<Notification> notifications = new();
+
+    HubConnection? hubConnection;
+    bool isBeeping = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "Guest";
+        isAnalyst = user.IsInRole("Analyst") || user.IsInRole("Admin");
+
+        if (isAnalyst)
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/notificationHub")
+                .WithAutomaticReconnect()
+                .Build();
+
+
+
+            hubConnection.On<int, string, string, string>("ReceiveNotification",
+async (notificationId, type, disease, uphc) =>
+{
+try
+{
+    using var db = DbFactory.CreateDbContext();
+
+    var notification = await db.Notifications
+        .Include(n => n.UPHC)
+        .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+
+
+        if (notification != null)
+        {
+            bool isNew = false;
+
+            if (!notifications.Any(n => n.Id == notification.Id))
+            {
+                notifications.Insert(0, notification);
+                unreadCount++;
+                isNew = true;
+            }
+
+            if (isNew)
+            {
+                // 🔊 SOUND for BOTH suspected + confirmed
+                if (!isBeeping)
+                {
+                    isBeeping = true;
+                    await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                }
+
+                // 🚨 ALERT ONLY for CONFIRMED
+                if (type == "Confirmed")
+                {
+                    // await JSRuntime.InvokeVoidAsync("alert",
+                    //     $"CONFIRMED: {disease} at {uphc}");
+
+
+                    await JSRuntime.InvokeVoidAsync("showToast", $"CONFIRMED: {disease} at {uphc}");
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+    // if (notification != null)
+    // {
+    //     if (!notifications.Any(n => n.Id == notification.Id))
+    //     {
+    //         notifications.Insert(0, notification);
+    //         unreadCount++;
+    //     }
+
+    //         // 🔔 SMART ALERT BASED ON TYPE
+    //     if (type == "Confirmed")
+    //     {
+    //         await JSRuntime.InvokeVoidAsync("alert",
+    //             $"CONFIRMED: {disease} at {uphc}");
+    //     }
+    //     else if (type == "Suspected")
+    //     {
+    //         Console.WriteLine($"Suspected: {disease} ({uphc})");
+    //     }
+
+    //         // 🔊 SOUND 
+    //     if (!isBeeping)
+    //     {
+    //         isBeeping = true;
+    //         await JSRuntime.InvokeVoidAsync("startBeepLoop");
+    //     }
+
+    //     await InvokeAsync(StateHasChanged);
+    // }
+
+
+
+
+
+
+
+
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"Notification error: {ex.Message}");
+}
+});
+
+            // hubConnection.On<int>("ReceiveNotification", async (notificationId) =>
+            // {
+            //     try
+            //     {
+            //         using var db = DbFactory.CreateDbContext();
+
+            //         var notification = await db.Notifications
+            //             .Include(n => n.UPHC)
+            //             .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+            //         if (notification != null)
+            //         {
+            //             if (!notifications.Any(n => n.Id == notification.Id))
+            //             {
+            //                 notifications.Insert(0, notification);
+            //                 unreadCount++;
+            //             }
+
+            //             if (!isBeeping)
+            //             {
+            //                 isBeeping = true;
+            //                 await JSRuntime.InvokeVoidAsync("startBeepLoop");
+            //             }
+
+            //             await InvokeAsync(StateHasChanged);
+            //         }
+            //     }
+            //     catch (Exception ex)
+            //     {
+            //         Console.WriteLine($"Notification error: {ex.Message}");
+            //     }
+            // });
+
+            hubConnection.Reconnected += async (_) =>
+            {
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            };
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("JoinAnalystGroup");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+
+        if (showDropdown)
+        {
+            unreadCount = 0;
+
+            if (isBeeping)
+            {
+                isBeeping = false;
+                await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+            }
+        }
+    }
+
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.CaseRecordId}");
+    }
+}
+
+ *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@*
+<div class="d-flex justify-content-between align-items-center p-2 shadow-sm bg-white">
+
+    <!-- Title -->
+    <h5>UPHC Surveillance Dashboard</h5>
+
+    <!-- Profile + Notification -->
+    <div class="position-relative">
+
+        <img src="user.png"
+             class="rounded-circle"
+             style="width:45px; cursor:pointer"
+             @onclick="ToggleDropdown" />
+
+        <!-- 🔴 Blinking Dot -->
+        @if (isAnalyst && unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-danger rounded-circle animate-blink"></span>
+        }
+
+        <!-- Dropdown -->
+        @if (showDropdown)
+        {
+            <div class="dropdown-menu show" style="right:0; left:auto; width:250px;">
+
+                <span class="dropdown-item-text fw-bold">@userName</span>
+                <div class="dropdown-divider"></div>
+
+                @if (isAnalyst)
+                {
+                    @foreach (var n in notifications)
+                    {
+                        <a class="dropdown-item" @onclick="() => OpenCase(n)">
+                            @n.UPHCName - @n.DiseaseName
+                        </a>
+                    }
+
+                    <div class="dropdown-divider"></div>
+                }
+
+                <button class="dropdown-item text-danger" @onclick="Logout">Logout</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="d-flex">
+    <NavMenu />
+    <div class="flex-fill p-3">
+        @Body
+    </div>
+</div>
+
+
+@code {
+    string userName = "";
+    bool showDropdown = false;
+
+    bool isAnalyst = false;
+    int unreadCount = 0;
+
+    List<Notification> notifications = new();
+
+    HubConnection hubConnection;
+    bool isBeeping = false;
+
+
+
+   
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        userName = user.Identity?.Name ?? "Guest";
+        isAnalyst = user.IsInRole("Analyst") || user.IsInRole("Admin");
+
+        if (isAnalyst)
+        {
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl("/notificationHub")
+                .WithAutomaticReconnect()
+                .Build();
+
+            // ✅ Receive notification by ID
+            hubConnection.On<int>("ReceiveNotification", async (notificationId) =>
+            {
+                try
+                {
+                    using var db = DbFactory.CreateDbContext();
+
+                    var notification = await db.Notifications
+                        .Include(n => n.UPHC)
+                        .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+                    if (notification != null)
+                    {
+                        unreadCount++;
+
+                        // ✅ Prevent duplicates (IMPORTANT)
+                        if (!notifications.Any(n => n.Id == notification.Id))
+                        {
+                            notifications.Insert(0, notification);
+                        }
+
+                        // 🔊 Start beep
+                        if (!isBeeping)
+                        {
+                            isBeeping = true;
+                            await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                        }
+
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Notification error: {ex.Message}");
+                }
+            });
+
+            // ✅ Handle reconnect (VERY IMPORTANT)
+            hubConnection.Reconnected += async (connectionId) =>
+            {
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            };
+
+            await hubConnection.StartAsync();
+            await hubConnection.SendAsync("JoinAnalystGroup");
+        }
+    }
+
+    public async ValueTask DisposeAsync() => await hubConnection.DisposeAsync();
+
+async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+
+        if (showDropdown)
+        {
+            unreadCount = 0;
+
+            if (isBeeping)
+            {
+                isBeeping = false;
+                await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+            }
+        }
+    }
+
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.Id}");
+    }
+
+   
+}*@

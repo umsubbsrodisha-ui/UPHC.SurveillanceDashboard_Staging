@@ -1,0 +1,112 @@
+﻿@page "/facility/{id:int}"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+
+<h2 class="mb-3">@FacilityName (@FacilityAddress)</h2>
+
+@if (cases == null)
+{
+    <p>Loading...</p>
+}
+else if (cases.Count == 0)
+{
+    <p>No cases found</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Disease</th>
+                <th>Patient</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in cases)
+            {
+                <tr>
+                    <td>@c.CreatedDate.ToShortDateString()</td>
+                    <td>@c.DiseaseName</td>
+                    <td>@c.PatientName</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary"
+                                @onclick="() => OpenCase(c.Id)">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between">
+        <button class="btn btn-secondary" @onclick="PrevPage" disabled="@(currentPage == 1)">Prev</button>
+        <span>Page @currentPage</span>
+        <button class="btn btn-secondary" @onclick="NextPage">Next</button>
+    </div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    List<CaseRecord> cases;
+    string FacilityName = "";
+    string FacilityAddress = "";
+
+    int currentPage = 1;
+    int pageSize = 10;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var facility = await db.Facilities.FindAsync(id);
+        if (facility != null)
+        {
+           FacilityName = facility.FacilityName;
+            FacilityAddress = facility.FacilityAddress;
+        }
+
+        await LoadCases();
+    }
+
+    async Task LoadCases()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        cases = await db.CaseRecords
+            .Where(c => c.FacilityId == id)
+            .OrderByDescending(c => c.CreatedDate)
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    async Task NextPage()
+    {
+        currentPage++;
+        await LoadCases();
+    }
+
+    async Task PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadCases();
+        }
+    }
+
+    void OpenCase(int caseId)
+    {
+        Navigation.NavigateTo($"/case-details/{caseId}");
+    }
+}

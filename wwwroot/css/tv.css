@@ -1,0 +1,318 @@
+﻿
+/* =========================================================
+   📺 COMMAND CENTER / LARGE TV MODE
+   Designed for:
+   - 55 inch TVs
+   - 75 inch displays
+   - Pandemic command centers
+   - Projectors
+   - Surveillance war rooms
+========================================================= */
+/* =========================================================
+   Ultra Wide Screens / TVs
+========================================================= */
+@media (min-width: 1920px) {
+    /* =====================================================
+       Global Typography
+    ===================================================== */
+    body {
+        font-size: 1.5rem;
+        line-height: 1.7;
+        background-color: #f4f7fb;
+    }
+
+    h1 {
+        font-size: 4rem;
+        font-weight: 800;
+    }
+
+    h2 {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+
+    h3 {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    h4 {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    h5 {
+        font-size: 1.7rem;
+        font-weight: 700;
+    }
+
+    h6 {
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    p,
+    span,
+    small,
+    td,
+    th,
+    li,
+    a {
+        font-size: 1.3rem;
+    }
+    /* =====================================================
+       Main Dashboard Container
+    ===================================================== */
+    .dashboard-container {
+        padding: 35px;
+        gap: 25px;
+    }
+    /* =====================================================
+       Sidebar / Navigation
+    ===================================================== */
+    .nav {
+        width: 320px !important;
+        padding-top: 20px;
+    }
+
+    .nav-link {
+        font-size: 1.5rem;
+        padding: 18px 24px;
+        border-radius: 14px;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+
+        .nav-link:hover {
+            background-color: #e9eef8;
+            transform: scale(1.02);
+            transition: 0.2s ease;
+        }
+    /* =====================================================
+       Top Profile Area
+    ===================================================== */
+    .topbar {
+        min-height: 90px;
+        padding: 15px 30px;
+    }
+
+    img.rounded-circle {
+        width: 70px !important;
+        height: 70px !important;
+    }
+    /* =====================================================
+       Dropdown Menu
+    ===================================================== */
+    .dropdown-menu {
+        width: 420px !important;
+        border-radius: 18px;
+        padding: 15px;
+        font-size: 1.2rem;
+    }
+
+    .dropdown-item {
+        padding: 15px 20px;
+        border-radius: 12px;
+        margin-bottom: 6px;
+    }
+
+        .dropdown-item:hover {
+            background-color: #f2f6fc;
+        }
+    /* =====================================================
+       Glass Cards
+    ===================================================== */
+    .glass-card {
+        border-radius: 28px;
+        padding: 35px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.10);
+        backdrop-filter: blur(14px);
+        transition: 0.3s ease;
+    }
+
+        .glass-card:hover {
+            transform: translateY(-6px);
+        }
+        /* =====================================================
+       Summary Cards
+    ===================================================== */
+        .glass-card h1 {
+            margin-top: 10px;
+            font-size: 4.5rem;
+            font-weight: 800;
+        }
+
+        .glass-card h6 {
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+    /* =====================================================
+       Mini Outbreak Cards
+    ===================================================== */
+    .mini-card {
+        padding: 24px;
+        margin-bottom: 18px;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+        .mini-card strong {
+            font-size: 1.6rem;
+        }
+
+        .mini-card small {
+            font-size: 1.2rem;
+        }
+
+        .mini-card span {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .mini-card.red {
+            border-left: 8px solid #dc2626;
+        }
+
+        .mini-card.orange {
+            border-left: 8px solid #f59e0b;
+        }
+    /* =====================================================
+       Facility Cards
+    ===================================================== */
+    .uphc-card {
+        min-height: 180px;
+        padding: 30px;
+        border-radius: 22px;
+    }
+
+        .uphc-card h2 {
+            font-size: 3rem;
+        }
+    /* =====================================================
+       Tables
+    ===================================================== */
+    table {
+        font-size: 1.3rem;
+    }
+
+    th {
+        font-size: 1.35rem;
+        font-weight: 700;
+    }
+
+    td {
+        padding: 16px !important;
+    }
+    /* =====================================================
+       Charts
+    ===================================================== */
+
+    #trendChart {
+        height: 650px !important;
+    }
+
+    #diseasePieChart {
+        height: 600px !important;
+    }
+
+    #facilityBarChart {
+        height: 700px !important;
+    }
+
+    canvas {
+        margin-top: 20px;
+    }
+    /* =====================================================
+       Notification Dot
+    ===================================================== */
+    .animate-blink {
+        width: 18px;
+        height: 18px;
+    }
+    /* =====================================================
+       Buttons
+    ===================================================== */
+    button,
+    .btn {
+        font-size: 1.2rem;
+        padding: 14px 22px;
+        border-radius: 12px;
+    }
+    /* =====================================================
+       Scrollbar (Large TV)
+    ===================================================== */
+    ::-webkit-scrollbar {
+        width: 14px;
+        height: 14px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #b9c3d1;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #edf2f7;
+    }
+    /* =====================================================
+       Flash Alerts More Visible on TVs
+    ===================================================== */
+    .flash-alert {
+        animation: flash-tv 2s ease-in-out 3;
+    }
+
+    @keyframes flash-tv {
+        0% {
+            background-color: #ffe5e5;
+            transform: scale(1);
+        }
+
+        50% {
+            background-color: #ffbdbd;
+            transform: scale(1.02);
+        }
+
+        100% {
+            background-color: inherit;
+            transform: scale(1);
+        }
+    }
+    /* =====================================================
+       TV Spacing Improvements
+    ===================================================== */
+    .row {
+        margin-bottom: 20px;
+    }
+
+    .container-fluid {
+        padding-left: 25px;
+        padding-right: 25px;
+    }
+    /* =====================================================
+       Better Readability on Projection Screens
+    ===================================================== */
+    .text-danger,
+    .text-warning,
+    .text-success,
+    .text-primary {
+        font-weight: 700;
+    }
+    /* =====================================================
+       Dashboard Title
+    ===================================================== */
+    .dashboard-title {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 25px;
+    }
+    /* =====================================================
+       Future Fullscreen TV Mode Support
+    ===================================================== */
+    .fullscreen-dashboard {
+        min-height: 100vh;
+        overflow: hidden;
+    }
+}
+
+
+

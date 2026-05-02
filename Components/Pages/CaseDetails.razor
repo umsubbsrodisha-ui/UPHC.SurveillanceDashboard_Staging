@@ -1,0 +1,61 @@
+﻿@page "/case-details/{id:int}"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+<h3>Case Details</h3>
+
+@if (caseRecord == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+
+    <div class="card p-4 shadow">
+        <h4>@caseRecord.DiseaseName</h4>
+
+        <p><b>Patient Name:</b> @caseRecord.PatientName</p>
+        <p><b>Address:</b> @caseRecord.AddressOfPatient</p>
+        <p><b>Symptoms:</b> @caseRecord.Symptoms</p>
+        <p><b>Disease:</b> @caseRecord.DiseaseName</p>
+        <p><b>Date:</b> @caseRecord.CreatedDate.ToShortDateString()</p>
+        <p><b>UPHC:</b> @caseRecord.Facility?.FacilityName</p>
+        <p><b>Phone:</b> @caseRecord.Phone</p>
+        <p><b>Type:</b> @(caseRecord.IsCommunicable ? "Communicable" : "Non-Communicable")</p>
+        <p><b>Status:</b> @caseRecord.Status</p>
+        
+        <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary"
+                    @onclick="GoToEdit">
+                ✏️ Edit Case
+            </button>
+        </div>
+    </div>
+
+ 
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    CaseRecord? caseRecord;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        caseRecord = await db.CaseRecords
+            .Include(c => c.Facility)
+            .FirstOrDefaultAsync(c => c.Id == id);
+    }
+
+
+    void GoToEdit()
+    {
+        Navigation.NavigateTo($"/case-edit/{id}");
+    }
+}
