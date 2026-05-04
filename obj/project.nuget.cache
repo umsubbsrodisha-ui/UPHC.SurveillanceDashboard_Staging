@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "C6gRL4xdJwc=",
+  "dgSpecHash": "APPDrMnIVfE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Prameela\\Downloads\\UPHC.SurveillanceDashboard_Staging_latest-main\\UPHC.SurveillanceDashboard_Staging_latest-main\\UPHC.SurveillanceDashboard.csproj",
+  "projectFilePath": "C:\\Users\\Prameela\\Desktop\\Project\\UPHC.SurveillanceDashboard_Staging_latest\\UPHC.SurveillanceDashboard.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Prameela\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Prameela\\.nuget\\packages\\microsoft.aspnetcore.app.internal.assets\\10.0.5\\microsoft.aspnetcore.app.internal.assets.10.0.5.nupkg.sha512",

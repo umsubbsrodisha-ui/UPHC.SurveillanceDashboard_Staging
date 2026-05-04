@@ -152,11 +152,13 @@
     {
         // var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         // var user = authState.User;
-        
+
         // if (!user.Identity?.IsAuthenticated == true)
         // {
         //     Navigation.NavigateTo("/login?returnUrl=%2Fdashboard", true);
         // }
+
+        await LoadDashboardData();
     }
 
     async Task LoadDashboardData()

@@ -1,5 +1,5 @@
 ﻿@page "/case-edit/{id:int}"
-@attribute [Authorize(Roles = "UPHCUser,CHCUser,UHWCUser")]
+@attribute [Authorize(Roles = "UPHCUser,CHCUser,UHWCUser,Admin")]
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
@@ -114,7 +114,7 @@ else
             if (existing.Status == CaseStatus.Confirmed ||
                 existing.Status == CaseStatus.Negative)
             {
-                existing.LabConfirmedDate = DateTime.Now;
+                existing.LabConfirmedDate = DateTime.Now.ToUniversalTime();
             }
 
             await db.SaveChangesAsync();
