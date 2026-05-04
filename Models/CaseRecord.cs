@@ -36,9 +36,9 @@ namespace UPHC.SurveillanceDashboard.Models
         [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Enter valid 10-digit mobile number")]
         public string Phone { get; set; } = "";
 
-        [Required(ErrorMessage = "Disease name is required")]
+       // [Required(ErrorMessage = "Disease name is required")]
         [StringLength(100, ErrorMessage = "Disease name too long")]
-        public string DiseaseName { get; set; } = "";
+        public string DiseaseName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Symptoms are required")]
         [StringLength(500, ErrorMessage = "Symptoms too long (max 500 characters)")]
@@ -62,7 +62,7 @@ namespace UPHC.SurveillanceDashboard.Models
 
         public CaseStatus Status { get; set; } = CaseStatus.Suspected;
 
-        [Required]
+        //[Required]
         public string UserId { get; set; } = "";
 
         public ApplicationUser User { get; set; } = default!;

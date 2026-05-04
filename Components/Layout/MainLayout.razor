@@ -1,5 +1,379 @@
 ﻿@inherits LayoutComponentBase
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
 
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<!-- ========================= -->
+<!-- 🔷 GOVERNMENT HEADER -->
+<!-- ========================= -->
+
+<div class="bg-white border-bottom shadow-sm">
+
+    <div class="d-flex justify-content-between align-items-center px-4 py-3">
+
+        <!-- 🏛 LEFT SIDE -->
+        <div class="d-flex align-items-center">
+
+            <!-- 🇮🇳 GOVERNMENT EMBLEM -->
+            <img src="images/emblem.png"
+                 style="height:85px;"
+                 class="me-3" />
+
+            <!-- 🧬 TITLE SECTION -->
+            <div>
+
+                <div class="fw-bold text-secondary"
+                     style="font-size:2.2rem; line-height:1.1;">
+                    Integrated Health Information Platform
+                </div>
+
+                <div class="fw-bold text-secondary"
+                     style="font-size:1.5rem; line-height:1.2;">
+                    Integrated Disease Surveillance Programme
+                </div>
+
+                <div class="text-muted"
+                     style="font-size:1.1rem;">
+                    Ministry of Health and Family Welfare,
+                    Government of India
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- 👤 RIGHT SIDE -->
+        <div class="d-flex align-items-center gap-4">
+
+            <!-- 🔗 OPTIONAL LINKS -->
+            <div class="text-end">
+
+                <div>
+                    <a href="#"
+                           class="text-danger text-decoration-none fw-semibold">
+                        IDSP Helpdesk
+                    </a>
+                </div>
+
+                <div>
+                    <a href="#"
+                           class="text-primary text-decoration-none">
+                        Report Problem
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- 🏥 IDSP LOGO -->
+            <img src="images/idsp-logo.png"
+                 style="height:85px;" />
+
+            <!-- 👤 PROFILE SECTION -->
+            <div class="position-relative">
+
+                <!-- 👤 PROFILE IMAGE -->
+                <img src="images/user.png"
+                     class="rounded-circle shadow-sm profile-avatar"
+                     @onclick="ToggleDropdown"
+                     style="cursor: pointer;" />
+
+                @if (isAnalyst && unreadCount > 0)
+                {
+                    <!-- 🔔 UNREAD COUNT -->
+                    <div class="notification-count">
+                        🔔 @unreadCount
+                    </div>
+
+                    <!-- 🔴 LIVE NOTIFICATION DOT -->
+                    <span class="notification-dot animate-blink"></span>
+                }
+
+                <!-- 🔽 DROPDOWN -->
+                @if (showDropdown)
+                {
+                    <div class="dropdown-menu show notification-dropdown">
+
+                        @if (!string.IsNullOrEmpty(userName))
+                        {
+                            <!-- 👤 USER -->
+                            <div class="dropdown-item-text fw-bold text-primary">
+                                @userName
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+
+                            @if (isAnalyst)
+                            {
+                                @if (notifications.Count == 0)
+                                {
+                                    <div class="dropdown-item-text text-muted">
+                                        No notifications
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var n in notifications)
+                                    {
+                                        <a class="dropdown-item notification-item @(!n.IsChecked ? "unread-notification" : "")"
+                                               @onclick="() => OpenCase(n)"
+                                               style="cursor: pointer;">
+                                            @if (!n.IsChecked)
+                                            {
+                                                <span class="badge bg-danger me-2">● NEW</span>
+                                            }
+                                            <div class="fw-semibold @(!n.IsChecked ? "text-danger" : "text-dark")">
+                                                @n.DiseaseName
+                                            </div>
+                                            <small class="text-muted">
+                                                @(n.Facility?.FacilityName ?? "Unknown Facility")
+                                            </small>
+                                            <div class="small text-muted">
+                                                @n.Timestamp.ToString("dd MMM yyyy HH:mm")
+                                            </div>
+                                        </a>
+                                    }
+                                }
+
+                                <div class="dropdown-divider"></div>
+                            }
+
+                            <!-- 🚪 LOGOUT -->
+                            <button class="dropdown-item text-danger fw-semibold"
+                                    @onclick="Logout">
+                                Logout
+                            </button>
+                        }
+                        else
+                        {
+                            <!-- Show login when logged out -->
+                            <a class="dropdown-item text-primary fw-semibold" href="/login">
+                                Login
+                            </a>
+                        }
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ========================= -->
+<!-- 🔷 MAIN BODY -->
+<!-- ========================= -->
+
+<div class="d-flex">
+
+    <!-- 📚 LEFT NAVIGATION -->
+    <NavMenu />
+
+    <!-- 📄 PAGE CONTENT -->
+    <div class="flex-fill p-3 dashboard-container">
+
+        @Body
+
+    </div>
+
+</div>
+
+@code {
+
+    string userName = "";
+    bool showDropdown = false;
+    bool isAnalyst = false;
+    int unreadCount = 0;
+    List<Notification> notifications = new();
+    HubConnection? hubConnection;
+    bool isBeeping = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        userName = user.Identity?.Name ?? "Guest";
+
+        // ✅ Facility Users
+        bool isFacilityUser = user.IsInRole("UPHCUser") ||
+                              user.IsInRole("CHCUser") ||
+                              user.IsInRole("UHWCUser");
+
+        // ✅ Analyst Group
+        isAnalyst = !isFacilityUser;
+
+        if (isAnalyst)
+        {
+            // Load ALL notifications (both checked and unchecked)
+            using var db = DbFactory.CreateDbContext();
+            notifications = await db.Notifications
+                .Include(n => n.Facility)
+                .OrderByDescending(n => n.Timestamp)
+                .Take(50)
+                .ToListAsync();
+
+            unreadCount = notifications.Count(n => !n.IsChecked);
+
+            if (hubConnection == null)
+            {
+                hubConnection = new HubConnectionBuilder()
+                    .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"))
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                // 🔔 RECEIVE NOTIFICATIONS
+                hubConnection.On<int, NotificationType, string, string>(
+                    "ReceiveNotification",
+                    async (notificationId, type, disease, facility) =>
+                    {
+                        try
+                        {
+                            using var db2 = DbFactory.CreateDbContext();
+                            var notification = await db2.Notifications
+                                .Include(n => n.Facility)
+                                .FirstOrDefaultAsync(n => n.Id == notificationId);
+
+                            if (notification != null && !notifications.Any(n => n.Id == notification.Id))
+                            {
+                                notifications.Insert(0, notification);
+                                unreadCount++;
+
+                                if (!isBeeping)
+                                {
+                                    isBeeping = true;
+                                    await JSRuntime.InvokeVoidAsync("startBeepLoop");
+                                }
+
+                                if (type == NotificationType.ConfirmedPositive)
+                                {
+                                    await JSRuntime.InvokeVoidAsync("showToast", $"CONFIRMED: {disease} at {facility}");
+                                }
+
+                                await InvokeAsync(StateHasChanged);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Notification error: {ex.Message}");
+                        }
+                    });
+
+                // 🔄 AUTO RECONNECT
+                hubConnection.Reconnected += async (_) =>
+                {
+                    await hubConnection.SendAsync("JoinAnalystGroup");
+                };
+
+                await hubConnection.StartAsync();
+                await hubConnection.SendAsync("JoinAnalystGroup");
+            }
+        }
+    }
+
+    // 👤 PROFILE CLICK
+    async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+        
+        if (showDropdown && unreadCount > 0)
+        {
+            // Mark all unchecked notifications as checked
+            try
+            {
+                using var db = DbFactory.CreateDbContext();
+                var unreadNotifications = notifications.Where(n => !n.IsChecked).ToList();
+                
+                foreach (var notification in unreadNotifications)
+                {
+                    notification.IsChecked = true;
+                    db.Notifications.Update(notification);
+                }
+                
+                await db.SaveChangesAsync();
+                unreadCount = 0;
+                
+                if (isBeeping)
+                {
+                    isBeeping = false;
+                    await JSRuntime.InvokeVoidAsync("stopBeepLoop");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error marking notifications: {ex.Message}");
+            }
+        }
+        
+        StateHasChanged();
+    }
+
+    // 🚪 LOGOUT
+    void Logout()
+    {
+        Navigation.NavigateTo("/logout", true);
+    }
+
+    // 📄 OPEN CASE
+    void OpenCase(Notification n)
+    {
+        Navigation.NavigateTo($"/case-details/{n.CaseRecordId}");
+    }
+
+    // 🔚 DISPOSE CONNECTION
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @inherits LayoutComponentBase
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.SignalR.Client
 @using Microsoft.EntityFrameworkCore
@@ -83,6 +457,7 @@
                 <img src="images/user.png"
                      class="rounded-circle shadow-sm profile-avatar"
                      @onclick="ToggleDropdown" />
+               
 
                 @if (isAnalyst && unreadCount > 0)
                 {
@@ -99,6 +474,12 @@
                 @if (showDropdown)
                 {
                     <div class="dropdown-menu show notification-dropdown">
+
+
+                        @if (!string.IsNullOrEmpty(userName))
+                        {
+
+                      
 
                         <!-- 👤 USER -->
                         <div class="dropdown-item-text fw-bold text-primary">
@@ -142,6 +523,18 @@
                                 @onclick="Logout">
                             Logout
                         </button>
+
+                        }
+
+                        else
+                        {
+                            <!-- Show login when logged out -->
+                            <a class="dropdown-item text-primary fw-semibold" href="/login">
+                                Login
+                            </a>
+                        }
+
+
 
                     </div>
                 }
@@ -324,7 +717,10 @@
 
     async Task ToggleDropdown()
     {
+       
+        
         showDropdown = !showDropdown;
+        StateHasChanged();
 
         // ✅ OPENING DROPDOWN
 
@@ -360,11 +756,24 @@
         Navigation.NavigateTo(
             $"/case-details/{n.CaseRecordId}");
     }
+
+
+    protected override void OnParametersSet()
+    {
+        // var uri = new Uri(Navigation.Uri);
+        // if (uri.LocalPath == "/dashboard")
+        // {
+        //     // Force a check when dashboard is accessed
+        //     Navigation.NavigateTo(Navigation.Uri, true);
+        // }
+    }
+
+
 }
 
 
 
-
+ *@
 
 
 

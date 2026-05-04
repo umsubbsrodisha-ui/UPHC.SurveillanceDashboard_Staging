@@ -1,0 +1,62 @@
+﻿@page "/login1"
+@rendermode InteractiveServer
+@inject IHttpClientFactory ClientFactory
+@inject NavigationManager Navigation
+
+<h3>Login</h3>
+
+<input @bind="username" placeholder="Username" />
+<br />
+<br />
+<input @bind="password" type="password" placeholder="Password" />
+<br />
+<br />
+<button @onclick="HandleLogin">Login</button>
+
+@if (!string.IsNullOrEmpty(error))
+{
+    <p style="color:red">@error</p>
+}
+
+@code {
+    string username = "";
+    string password = "";
+    string error = "";
+    string? returnUrl;
+
+    protected override void OnInitialized()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        returnUrl = query["returnUrl"];
+    }
+
+    async Task HandleLogin()
+    {
+        error = "";
+        
+        var client = ClientFactory.CreateClient();
+        var baseUri = Navigation.BaseUri;
+        var response = await client.PostAsJsonAsync($"{baseUri}api/login", new
+        {
+            Username = username,
+            Password = password
+        });
+        
+        // var response = await client.PostAsJsonAsync("/api/login", new
+        // {
+        //     Username = username,
+        //     Password = password
+        // });
+
+        if (response.IsSuccessStatusCode)
+        {
+            var redirectTo = string.IsNullOrEmpty(returnUrl) ? "/dashboard" : returnUrl;
+            Navigation.NavigateTo(redirectTo, true);
+        }
+        else
+        {
+            error = "Invalid username/password";
+        }
+    }
+}

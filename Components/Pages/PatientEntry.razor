@@ -1,5 +1,5 @@
-﻿@page "/patient-entry"
-@attribute [Authorize(Roles = "UPHCUser,CHCUser,UHWCuser")]
+﻿@page "/patiententry"
+@attribute [Authorize(Roles = "UPHCUser,CHCUser,UHWCUser")]
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -199,6 +199,13 @@
             caseRecord.UserId = appUser.Id;
             caseRecord.CreatedDate = DateTime.UtcNow; // ✅ FIXED
             caseRecord.Status = CaseStatus.Suspected;
+
+            // Before saving, converted dates to UTC
+            caseRecord.OnsetDate = DateTime.SpecifyKind(caseRecord.OnsetDate, DateTimeKind.Utc);
+            caseRecord.DateReported = DateTime.SpecifyKind(caseRecord.DateReported, DateTimeKind.Utc);
+            caseRecord.CreatedDate = DateTime.UtcNow;
+
+
 
             db.CaseRecords.Add(caseRecord);
             await db.SaveChangesAsync();

@@ -1,5 +1,5 @@
 ﻿@page "/case-edit/{id:int}"
-@attribute [Authorize(Roles = "UPHCUser")]
+@attribute [Authorize(Roles = "UPHCUser,CHCUser,UHWCUser")]
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore

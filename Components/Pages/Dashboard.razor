@@ -1,7 +1,8 @@
 ﻿@page "/dashboard"
 @attribute [Authorize]
-
+@inject AuthenticationStateProvider AuthStateProvider
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 
 @using UPHC.SurveillanceDashboard.Data
@@ -147,12 +148,21 @@
 
     bool isFirstLoad = true;  // Flashes should be off in first load
 
-
+    protected override async Task OnInitializedAsync()
+    {
+        // var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        // var user = authState.User;
+        
+        // if (!user.Identity?.IsAuthenticated == true)
+        // {
+        //     Navigation.NavigateTo("/login?returnUrl=%2Fdashboard", true);
+        // }
+    }
 
     async Task LoadDashboardData()
     {
         using var db = DbFactory.CreateDbContext();
-        DateTime fromDate = DateTime.Today.AddDays(-14);
+        DateTime fromDate = DateTime.Today.AddDays(-14).ToUniversalTime();
 
         totalPatients = await db.CaseRecords
             .Where(c => c.CreatedDate >= fromDate && c.IsCommunicable)
@@ -160,7 +170,7 @@
 
         outbreaks = await db.CaseRecords
             .Include(c => c.Facility)
-            .Where(c => c.CreatedDate >= fromDate &&
+            .Where(c => c.CreatedDate >= fromDate && 
                         c.IsCommunicable &&
                         c.Status == CaseStatus.Confirmed)
             .GroupBy(c => new { c.DiseaseName, c.Facility.FacilityName })

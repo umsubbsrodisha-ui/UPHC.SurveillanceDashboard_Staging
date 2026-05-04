@@ -1,0 +1,10 @@
+﻿@page "/login"
+@inject NavigationManager Navigation
+
+<form method="post" action="/api/login">
+    <input name="Username" placeholder="Username" />
+    <br />
+    <input name="Password" type="password" placeholder="Password" />
+    <br />
+    <button type="submit">Login</button>
+</form>
