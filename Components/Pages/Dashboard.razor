@@ -1,5 +1,515 @@
 ﻿@page "/dashboard"
 @attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.SignalR.Client
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+
+@using UPHC.SurveillanceDashboard.Data
+@using UPHC.SurveillanceDashboard.Models
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="container-fluid dashboard-container">
+
+    ```
+    <h4 class="mb-4 fw-bold">🧬 Surveillance Dashboard</h4>
+
+    <!-- SUMMARY -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-4">
+            <div class="glass-card gradient-blue text-white">
+                <h6>Total Cases (14 days)</h6>
+                <h1>@totalPatients</h1>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="glass-card gradient-red text-white">
+                <h6>Confirmed Outbreaks</h6>
+                <h1>@outbreaks.Count</h1>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="glass-card gradient-orange text-white">
+                <h6>Suspected Clusters</h6>
+                <h1>@suspectedClusters.Count</h1>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TREND -->
+    <div class="glass-card mb-4">
+
+        <h5>📈 Case Trend (Last 14 Days)</h5>
+
+        <div style="height:400px;">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- PIE -->
+    <div class="glass-card mb-4">
+
+        <h5>🦠 Disease Distribution</h5>
+
+        <div style="height:450px;">
+            <canvas id="diseasePieChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- BAR -->
+    <div class="glass-card mb-4">
+
+        <h5>🏥 Facility Case Load</h5>
+
+        <div style="height:500px;">
+            <canvas id="facilityBarChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- CONFIRMED OUTBREAKS -->
+    <div class="glass-card mb-4">
+
+        <h5 class="text-danger">🚨 Confirmed Outbreaks</h5>
+
+        @if (outbreaks.Count == 0)
+        {
+            <p>No outbreaks detected</p>
+        }
+        else
+        {
+            @foreach (var o in outbreaks)
+            {
+                var key = $"{o.DiseaseName}-{o.FacilityName}-{o.FirstCaseDate:yyyyMMdd}";
+
+                <div class="mini-card red @(newOutbreakKeys.Contains(key) ? "flash-alert" : "")">
+
+                    <strong>@o.DiseaseName</strong><br />
+
+                    <small>@o.FacilityName</small><br />
+
+                    <span>@o.Count cases</span>
+
+                </div>
+            }
+        }
+
+    </div>
+
+    <!-- SUSPECTED -->
+    <div class="glass-card mb-4">
+
+        <h5 class="text-warning">🟠 Suspected Clusters</h5>
+
+        @if (suspectedClusters.Count == 0)
+        {
+            <p>No clusters</p>
+        }
+        else
+        {
+            @foreach (var s in suspectedClusters)
+            {
+                var key = $"{s.DiseaseName}-{s.FacilityName}-{s.FirstCaseDate:yyyyMMdd}";
+
+                <div class="mini-card orange @(newSuspectedKeys.Contains(key) ? "flash-alert" : "")">
+
+                    <strong>@s.DiseaseName</strong><br />
+
+                    <small>@s.FacilityName</small><br />
+
+                    <span>@s.Count cases</span>
+
+                </div>
+            }
+        }
+
+    </div>
+
+    <!-- FACILITY CARDS -->
+    <div class="row g-3">
+
+        @foreach (var f in facilityStats)
+        {
+            <div class="col-md-3">
+
+                <div class="glass-card"
+                     style="cursor:pointer;"
+                     @onclick="() => GoToFacility(f.Id)">
+
+                    <h6>@f.Name</h6>
+
+                    <h2>@f.TotalCases</h2>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+    
+
+</div>
+
+@code {
+
+
+HubConnection? hubConnection;
+
+    bool shouldRenderCharts = false;
+
+    int totalPatients;
+
+    List<OutbreakDto> outbreaks = new();
+    List<OutbreakDto> suspectedClusters = new();
+    List<FacilityStat> facilityStats = new();
+
+    List<string> trendLabels = new();
+    List<int> confirmedData = new();
+    List<int> suspectedData = new();
+
+    List<string> diseaseLabels = new();
+    List<int> diseaseCounts = new();
+
+    List<string> facilityLabels = new();
+    List<int> facilityData = new();
+
+    HashSet<string> previousOutbreakKeys = new();
+    HashSet<string> previousSuspectedKeys = new();
+
+    HashSet<string> newOutbreakKeys = new();
+    HashSet<string> newSuspectedKeys = new();
+
+    bool isFirstLoad = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    async Task LoadDashboardData()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        DateTime fromDate = DateTime.UtcNow.AddDays(-14);
+
+        // TOTAL CASES
+        totalPatients = await db.CaseRecords
+            .Where(c =>
+                c.CreatedDate >= fromDate &&
+                c.IsCommunicable)
+            .CountAsync();
+
+        // CONFIRMED OUTBREAKS
+        outbreaks = await db.CaseRecords
+            .Include(c => c.Facility)
+            .Where(c =>
+                c.OnsetDate >= fromDate.Date &&
+                c.IsCommunicable &&
+                c.Status == CaseStatus.Confirmed)
+            .GroupBy(c => new
+            {
+                c.DiseaseName,
+                c.Facility.FacilityName
+            })
+            .Select(g => new OutbreakDto
+            {
+                DiseaseName = g.Key.DiseaseName,
+                FacilityName = g.Key.FacilityName,
+                Count = g.Count(),
+                FirstCaseDate = g.Min(x => x.OnsetDate)
+            })
+            .Where(x => x.Count >= 3)
+            .ToListAsync();
+
+        // SUSPECTED CLUSTERS
+        suspectedClusters = await db.CaseRecords
+            .Include(c => c.Facility)
+            .Where(c =>
+                c.OnsetDate >= fromDate.Date &&
+                c.IsCommunicable &&
+                c.Status == CaseStatus.Suspected)
+            .GroupBy(c => new
+            {
+                c.DiseaseName,
+                c.Facility.FacilityName
+            })
+            .Select(g => new OutbreakDto
+            {
+                DiseaseName = g.Key.DiseaseName,
+                FacilityName = g.Key.FacilityName,
+                Count = g.Count(),
+                FirstCaseDate = g.Min(x => x.OnsetDate)
+            })
+            .Where(x => x.Count >= 5)
+            .ToListAsync();
+
+        // FACILITY STATS
+        facilityStats = await db.Facilities
+            .Select(f => new FacilityStat
+            {
+                Id = f.Id,
+                Name = f.FacilityName,
+                TotalCases = f.CaseRecords.Count(c => c.IsCommunicable)
+            })
+            .ToListAsync();
+
+        // =========================
+        // TREND GRAPH FIXED
+        // =========================
+
+        var trendRecords = await db.CaseRecords
+            .Where(c =>
+                c.OnsetDate >= fromDate.Date &&
+                c.IsCommunicable &&
+                c.Status != CaseStatus.Negative)
+            .ToListAsync();
+
+        trendLabels.Clear();
+        confirmedData.Clear();
+        suspectedData.Clear();
+
+        for (int i = 13; i >= 0; i--)
+        {
+            var date = DateTime.UtcNow.Date.AddDays(-i);
+
+            var confirmed = trendRecords.Count(x =>
+                x.Status == CaseStatus.Confirmed &&
+                x.OnsetDate.Date == date.Date);
+
+            var suspected = trendRecords.Count(x =>
+                x.Status == CaseStatus.Suspected &&
+                x.OnsetDate.Date == date.Date);
+            trendLabels.Add(date.ToString("dd MMM"));
+
+            confirmedData.Add(confirmed);
+            suspectedData.Add(suspected);
+        }
+
+        // DISEASE PIE CHART
+        var diseaseData = await db.CaseRecords
+            .Where(c =>
+                c.OnsetDate >= fromDate.Date &&
+                c.IsCommunicable)
+            .GroupBy(c => c.DiseaseName)
+            .Select(g => new
+            {
+                g.Key,
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(6)
+            .ToListAsync();
+
+        diseaseLabels = diseaseData
+            .Select(x => x.Key)
+            .ToList();
+
+        diseaseCounts = diseaseData
+            .Select(x => x.Count)
+            .ToList();
+
+        // FACILITY BAR CHART
+        var facilityChart = await db.Facilities
+            .Select(f => new
+            {
+                f.FacilityName,
+
+                Count = f.CaseRecords
+                    .Where(c =>
+                        c.OnsetDate >= fromDate.Date &&
+                        c.IsCommunicable)
+                    .Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .Take(8)
+            .ToListAsync();
+
+        facilityLabels = facilityChart
+            .Select(x => x.FacilityName)
+            .ToList();
+
+        facilityData = facilityChart
+            .Select(x => x.Count)
+            .ToList();
+
+        // SMART FLASH
+        var currentOutbreakKeys = outbreaks
+            .Select(o =>
+                $"{o.DiseaseName}-{o.FacilityName}-{o.FirstCaseDate:yyyyMMdd}")
+            .ToHashSet();
+
+        var currentSuspectedKeys = suspectedClusters
+            .Select(s =>
+                $"{s.DiseaseName}-{s.FacilityName}-{s.FirstCaseDate:yyyyMMdd}")
+            .ToHashSet();
+
+        newOutbreakKeys = currentOutbreakKeys
+            .Except(previousOutbreakKeys)
+            .ToHashSet();
+
+        newSuspectedKeys = currentSuspectedKeys
+            .Except(previousSuspectedKeys)
+            .ToHashSet();
+
+        if (isFirstLoad)
+        {
+            newOutbreakKeys.Clear();
+            newSuspectedKeys.Clear();
+
+            isFirstLoad = false;
+        }
+
+        previousOutbreakKeys = currentOutbreakKeys;
+        previousSuspectedKeys = currentSuspectedKeys;
+    }
+
+    async Task RenderCharts()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "renderTrendChart",
+                trendLabels,
+                confirmedData,
+                suspectedData);
+
+            await JSRuntime.InvokeVoidAsync(
+                "renderDiseasePieChart",
+                diseaseLabels,
+                diseaseCounts);
+
+            await JSRuntime.InvokeVoidAsync(
+                "renderUPHCBarChart",
+                facilityLabels,
+                facilityData);
+        }
+        catch (JSDisconnectedException)
+        {
+
+        }
+        catch (TaskCanceledException)
+        {
+
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            // FIRST LOAD
+            if (firstRender)
+            {
+                await Task.Delay(300);
+
+                await RenderCharts();
+
+                hubConnection = new HubConnectionBuilder()
+                    .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"))
+                    .WithAutomaticReconnect()
+                    .Build();
+
+                hubConnection.On("DashboardUpdated", async () =>
+                {
+                    await LoadDashboardData();
+
+                    shouldRenderCharts = true;
+
+                    await InvokeAsync(StateHasChanged);
+                });
+
+                await hubConnection.StartAsync();
+
+                await hubConnection.SendAsync("JoinDashboardGroup");
+            }
+
+            // SAFE RE-RENDER
+            if (shouldRenderCharts)
+            {
+                shouldRenderCharts = false;
+
+                await Task.Delay(100);
+
+                await RenderCharts();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+
+        }
+        catch (TaskCanceledException)
+        {
+
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    void GoToFacility(int id)
+    {
+        Navigation.NavigateTo($"/facility/{id}");
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @page "/dashboard"
+@attribute [Authorize]
 @inject AuthenticationStateProvider AuthStateProvider
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -42,9 +552,16 @@
     </div>
 
     <!-- TREND -->
+ 
+
     <div class="glass-card mb-4">
+
         <h5>📈 Case Trend (Last 14 Days)</h5>
-        <canvas id="trendChart"></canvas>
+
+        <div style="height:400px; position:relative;">
+            <canvas id="trendChart"></canvas>
+        </div>
+
     </div>
 
     <!-- PIE -->
@@ -211,30 +728,41 @@
             })
             .ToListAsync();
 
+
+
+       
+        DateTime trendFromDate = DateTime.UtcNow.Date.AddDays(-14);
+
         var trendData = await db.CaseRecords
-            .Where(c => c.CreatedDate >= fromDate && c.IsCommunicable)
-            .GroupBy(c => c.CreatedDate.Date)
-            .Select(g => new
-            {
-                Date = g.Key,
-                Confirmed = g.Count(x => x.Status == CaseStatus.Confirmed),
-                Suspected = g.Count(x => x.Status == CaseStatus.Suspected)
-            })
+            .Where(c =>
+                c.OnsetDate.Date >= trendFromDate.Date &&
+                c.IsCommunicable &&
+                c.Status != CaseStatus.Negative)
             .ToListAsync();
 
         trendLabels.Clear();
         confirmedData.Clear();
         suspectedData.Clear();
 
-        for (int i = 0; i < 14; i++)
+        for (int i = 13; i >= 0; i--)
         {
-            var date = fromDate.AddDays(i).Date;
-            var day = trendData.FirstOrDefault(x => x.Date == date);
+            var date = DateTime.UtcNow.Date.AddDays(-i);
+
+            var confirmed = trendData.Count(x =>
+                x.Status == CaseStatus.Confirmed &&
+                x.OnsetDate.Date == date.Date);
+
+            var suspected = trendData.Count(x =>
+                x.Status == CaseStatus.Suspected &&
+                x.OnsetDate.Date == date.Date);
 
             trendLabels.Add(date.ToString("dd MMM"));
-            confirmedData.Add(day?.Confirmed ?? 0);
-            suspectedData.Add(day?.Suspected ?? 0);
+
+            confirmedData.Add(confirmed);
+            suspectedData.Add(suspected);
         }
+
+      
 
         var diseaseData = await db.CaseRecords
             .Where(c => c.CreatedDate >= fromDate && c.IsCommunicable)
@@ -348,7 +876,7 @@
     }
 }
 
-
+*@
 
 
 
