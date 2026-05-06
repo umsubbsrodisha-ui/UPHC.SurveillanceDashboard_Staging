@@ -96,12 +96,32 @@
         </button>
     </EditForm>
 
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="custom-alert-overlay">
+            <div class="custom-alert-box @(success ? "success" : "error")">
+
+                <div class="alert-icon">
+                    @(success ? "✔️" : "❌")
+                </div>
+
+                <div class="alert-text">
+                    @message
+                </div>
+
+                <button class="alert-close" @onclick="CloseAlert">OK</button>
+
+            </div>
+        </div>
+    }
+@* 
     @if (!string.IsNullOrEmpty(message))
     {
         <div class="alert @(success ? "alert-success" : "alert-danger") mt-3">
             @message
         </div>
-    }
+    } *@
 </div>
 
 @code {
@@ -247,6 +267,12 @@
     {
         return outbreakDiseases
             .Any(d => d.Equals(disease, StringComparison.OrdinalIgnoreCase));
+    }
+
+
+    void CloseAlert()
+    {
+        message = null;
     }
 }
 

@@ -9,7 +9,7 @@ html, body {
     font-family: "Segoe UI", sans-serif;
     font-size: 1.02rem;
     overflow-x: hidden;
-    background: linear-gradient(180deg,#eef4ff,#f8fbff);
+    background:none !important; /*linear-gradient(180deg,#eef4ff,#f8fbff);*/
     background-attachment: fixed;
     color: #1e293b ;
 }
@@ -19,7 +19,8 @@ html, body {
         content: "";
         position: fixed;
         inset: 0;
-        background: radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 40%), radial-gradient(circle at bottom right, rgba(255,255,255,0.35), transparent 35%), linear-gradient(135deg, #7dd3fc 0%, #60a5fa 25%, #818cf8 55%, #c084fc 100%);
+        background: linear-gradient(90deg,rgba(42, 123, 155, 1) 0%, rgba(87, 199, 133, 1) 77%, rgba(237, 221, 83, 1) 100%);
+        /*radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 40%), radial-gradient(circle at bottom right, rgba(255,255,255,0.35), transparent 35%), linear-gradient(135deg, #7dd3fc 0%, #60a5fa 25%, #818cf8 55%, #c084fc 100%);*/
         z-index: -2;
     }
 
@@ -115,7 +116,7 @@ html, body {
     width: 260px;
     min-height: 100vh;
     padding: 18px 16px;
-    background: rgba(15,23,42,0.82);
+    background: #2A7B9B /*rgba(15,23,42,0.82)*/;
     backdrop-filter: blur(18px);
     border-right: 1px solid rgba(255,255,255,0.08);
     box-shadow: 8px 0 30px rgba(0,0,0,0.12);
@@ -134,7 +135,8 @@ html, body {
     width: 58px;
     height: 58px;
     border-radius: 18px;
-    background: linear-gradient(135deg,#38bdf8,#6366f1);
+    background: linear-gradient(90deg,rgba(42, 123, 155, 1) 0%, rgba(33, 69, 46, 1) 78%, rgba(237, 221, 83, 1) 100%); /*linear-gradient(135deg,#38bdf8,#6366f1)*/
+    ;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -222,7 +224,7 @@ html, body {
 .dashboard-container {
     min-height: 100vh;
     padding: 24px;
-    background: transparent;
+    background: transparent !important;
 }
 
 /* =========================================================
@@ -402,10 +404,28 @@ html, body {
 ========================================================= */
 
 .flash-alert {
-    animation: flash 1.5s ease-in-out 2;
+    animation: flash 1.5s ease-in-out 20;
+    box-shadow: 0 0 0px rgba(239,68,68,0.7);
 }
 
 @keyframes flash {
+    0% {
+        background-color: #fff5f5;
+        box-shadow: 0 0 0px rgba(239,68,68,0.0);
+    }
+
+    50% {
+        background-color: #fecaca;
+        box-shadow: 0 0 20px rgba(239,68,68,0.6);
+    }
+
+    100% {
+        background-color: #fff;
+        box-shadow: 0 0 0px rgba(239,68,68,0.0);
+    }
+}
+
+/*@keyframes flash {
     0% {
         background-color: rgba(255,0,0,0.08);
     }
@@ -417,7 +437,7 @@ html, body {
     100% {
         background-color: transparent;
     }
-}
+}*/
 
 /* =========================================================
 📺 LARGE SCREEN
@@ -585,6 +605,84 @@ html, body {
 }
 
 
+
+/* ================================
+🌟 CENTER POPUP ALERT
+================================ */
+
+.custom-alert-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* BOX */
+.custom-alert-box {
+    min-width: 320px;
+    max-width: 420px;
+    padding: 30px;
+    border-radius: 20px;
+    text-align: center;
+    color: white;
+    animation: popupScale 0.3s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+
+    /* SUCCESS */
+    .custom-alert-box.success {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    /* ERROR */
+    .custom-alert-box.error {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+/* ICON */
+.alert-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+/* TEXT */
+.alert-text {
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+/* BUTTON */
+.alert-close {
+    background: white;
+    color: #111827;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+    .alert-close:hover {
+        transform: scale(1.05);
+    }
+
+/* ANIMATION */
+@keyframes popupScale {
+    from {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
 
 
 
