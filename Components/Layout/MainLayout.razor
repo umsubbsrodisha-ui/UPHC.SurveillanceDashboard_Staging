@@ -13,11 +13,224 @@
 @inject IJSRuntime JSRuntime
 @inject IDbContextFactory<AppDbContext> DbFactory
 
+
+
+
+
+<!-- ========================= -->
+<!-- 🔷 GOVERNMENT HEADER RESPONSIVE -->
+<!-- ========================= -->
+
+<div class="container-fluid bg-white border-bottom shadow-sm">
+
+    <div class="row align-items-center px-2 px-lg-4 py-3">
+
+        <!-- ====================================== -->
+        <!-- 🏛 LEFT SECTION -->
+        <!-- ====================================== -->
+
+        <div class="col-12 col-lg-8 mb-3 mb-lg-0">
+
+            <div class="d-flex align-items-center">
+
+                <!-- 🇮🇳 EMBLEM -->
+                <img src="images/emblem.png"
+                     class="gov-logo me-3 img-fluid"
+                     style="max-height:85px;" />
+
+                <!-- 🧬 TITLE -->
+                <div class="overflow-hidden">
+
+                    <div class="fw-bold text-secondary header-title"
+                         style="font-size:clamp(1.3rem, 3vw, 2.2rem); line-height:1.1;">
+
+                        Integrated Health Information Platform
+
+                    </div>
+
+                    <div class="fw-bold text-secondary header-subtitle"
+                         style="font-size:clamp(1rem, 2vw, 1.5rem); line-height:1.2;">
+
+                        Integrated Disease Surveillance Programme
+
+                    </div>
+
+                    <div class="text-muted header-ministry"
+                         style="font-size:clamp(0.85rem, 1.5vw, 1.1rem);">
+
+                        Ministry of Health and Family Welfare,
+                        Government of India
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ====================================== -->
+        <!-- 👤 RIGHT SECTION -->
+        <!-- ====================================== -->
+
+        <div class="col-12 col-lg-4">
+
+            <div class="d-flex justify-content-lg-end justify-content-center align-items-center gap-3 flex-wrap">
+
+                <!-- 🔗 LINKS -->
+                <div class="text-center text-lg-end">
+
+                    <div>
+                        <a href="#"
+                               class="text-danger text-decoration-none fw-semibold small">
+
+                            IDSP Helpdesk
+
+                        </a>
+                    </div>
+
+                    <div>
+                        <a href="#"
+                               class="text-primary text-decoration-none small">
+
+                            Report Problem
+
+                        </a>
+                    </div>
+
+                </div>
+
+                <!-- 🏥 IDSP LOGO -->
+                <img src="images/idsp-logo.png"
+                     class="img-fluid"
+                     style="max-height:80px;" />
+
+                <!-- ====================================== -->
+                <!-- 👤 PROFILE -->
+                <!-- ====================================== -->
+
+                <div class="position-relative">
+
+                    <!-- 👤 PROFILE IMAGE -->
+                    <img src="images/user.png"
+                         class="rounded-circle shadow-sm profile-avatar"
+                         @onclick="ToggleDropdown"
+                         style="cursor:pointer;" />
+
+                    @if (isAnalyst && unreadCount > 0)
+                    {
+                        <!-- 🔔 COUNT -->
+                        <div class="notification-count">
+                            🔔 @unreadCount
+                        </div>
+
+                        <!-- 🔴 LIVE DOT -->
+                        <span class="notification-dot animate-blink"></span>
+                    }
+
+                    <!-- ====================================== -->
+                    <!-- 🔽 DROPDOWN -->
+                    <!-- ====================================== -->
+                    @if (showDropdown)
+                    {
+                        <div class="dropdown-menu show notification-dropdown">
+
+                            <AuthorizeView>
+
+                                <!-- ✅ AUTHORIZED -->
+                                <Authorized>
+
+                                    <!-- 👤 USER -->
+                                    <div class="dropdown-item-text fw-bold text-primary">
+                                        @userName
+                                    </div>
+
+                                    <div class="dropdown-divider"></div>
+
+                                    @if (isAnalyst)
+                                    {
+                                        @if (notifications.Count == 0)
+                                        {
+                                            <div class="dropdown-item-text text-muted">
+                                                No notifications
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var n in notifications)
+                                            {
+                                                <a class="dropdown-item notification-item @(!n.IsChecked ? "unread-notification" : "")"
+                                                       @onclick="() => OpenCase(n)"
+                                                       style="cursor:pointer;">
+
+                                                    @if (!n.IsChecked)
+                                                    {
+                                                        <span class="badge bg-danger me-2">
+                                                            ● NEW
+                                                        </span>
+                                                    }
+
+                                                    <div class="fw-semibold @(!n.IsChecked ? "text-danger" : "text-dark")">
+                                                        @n.DiseaseName
+                                                    </div>
+
+                                                    <small class="text-muted">
+                                                        @(n.Facility?.FacilityName ?? "Unknown Facility")
+                                                    </small>
+
+                                                    <div class="small text-muted">
+                                                        @n.Timestamp.ToString("dd MMM yyyy HH:mm")
+                                                    </div>
+
+                                                </a>
+                                            }
+                                        }
+
+                                        <div class="dropdown-divider"></div>
+                                    }
+
+                                    <!-- 🚪 LOGOUT -->
+                                    <button class="dropdown-item text-danger fw-semibold"
+                                            @onclick="Logout">
+
+                                        Logout
+
+                                    </button>
+
+                                </Authorized>
+
+                                <!-- ❌ NOT AUTHORIZED -->
+                                <NotAuthorized>
+
+                                    <a class="dropdown-item text-primary fw-semibold"
+                                           href="/Login">
+
+                                        Login
+
+                                    </a>
+
+                                </NotAuthorized>
+
+                            </AuthorizeView>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 <!-- ========================= -->
 <!-- 🔷 GOVERNMENT HEADER -->
 <!-- ========================= -->
 
-<div class="bg-white border-bottom shadow-sm">
+@* <div class="bg-white border-bottom shadow-sm">
 
     <div class="d-flex justify-content-between align-items-center px-4 py-3">
 
@@ -197,6 +410,31 @@
     </div>
 
 </div>
+
+
+
+
+ *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- ========================= -->
 <!-- 🔷 MAIN BODY -->

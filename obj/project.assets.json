@@ -2510,11 +2510,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Prameela\\Desktop\\Project\\UPHC.SurveillanceDashboard_Staging_latest\\UPHC.SurveillanceDashboard.csproj",
+      "projectUniqueName": "D:\\UPHC.SurveillanceDashboard_Staging\\UPHC.SurveillanceDashboard.csproj",
       "projectName": "UPHC.SurveillanceDashboard",
-      "projectPath": "C:\\Users\\Prameela\\Desktop\\Project\\UPHC.SurveillanceDashboard_Staging_latest\\UPHC.SurveillanceDashboard.csproj",
+      "projectPath": "D:\\UPHC.SurveillanceDashboard_Staging\\UPHC.SurveillanceDashboard.csproj",
       "packagesPath": "C:\\Users\\Prameela\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Prameela\\Desktop\\Project\\UPHC.SurveillanceDashboard_Staging_latest\\obj\\",
+      "outputPath": "D:\\UPHC.SurveillanceDashboard_Staging\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

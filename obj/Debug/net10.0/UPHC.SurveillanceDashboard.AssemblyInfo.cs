@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UPHC.SurveillanceDashboard")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e22f735970037a37f001b251670df2384f82cdb0")]
 [assembly: System.Reflection.AssemblyProductAttribute("UPHC.SurveillanceDashboard")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UPHC.SurveillanceDashboard")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

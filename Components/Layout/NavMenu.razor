@@ -1,5 +1,451 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Identity
+@using UPHC.SurveillanceDashboard.Models
+@inject UserManager<ApplicationUser> UserManager
+
+<!-- ========================= -->
+<!-- 💻 DESKTOP SIDEBAR -->
+<!-- ========================= -->
+<div class="sidebar-container d-none d-md-flex flex-column">
+
+    <a href="/dashboard" class="modern-nav-btn dashboard-btn">
+        📊 Dashboard
+    </a>
+
+    @if (isFacilityUser)
+    {
+        <a href="/patiententry" class="modern-nav-btn patient-btn">
+            🧾 Patient Entry
+        </a>
+
+        <a href="@facilityLink" class="modern-nav-btn records-btn">
+            📁 Case Records
+        </a>
+    }
+
+    @if (isAnalystGroup)
+    {
+        <a href="/records" class="modern-nav-btn analyst-btn">
+            📂 Records
+        </a>
+
+        <a href="/uphc-list" class="modern-nav-btn uphc-btn">
+            🏥 UPHC List
+        </a>
+    }
+
+</div>
+
+
+<!-- ========================= -->
+<!-- 📱 MOBILE BOTTOM NAV -->
+<!-- ========================= -->
+<div class="mobile-nav d-flex d-md-none justify-content-around align-items-center">
+
+    <a href="/dashboard" class="mobile-nav-item">
+        📊
+        <span>Home</span>
+    </a>
+
+    @if (isFacilityUser)
+    {
+        <a href="/patiententry" class="mobile-nav-item">
+            🧾
+            <span>Entry</span>
+        </a>
+
+        <a href="@facilityLink" class="mobile-nav-item">
+            📁
+            <span>Cases</span>
+        </a>
+    }
+
+    @if (isAnalystGroup)
+    {
+        <a href="/records" class="mobile-nav-item">
+            📂
+            <span>Records</span>
+        </a>
+
+        <a href="/uphc-list" class="mobile-nav-item">
+            🏥
+            <span>UPHC</span>
+        </a>
+    }
+
+</div>
+
+
+@code {
+    bool isAnalystGroup = false;
+    bool isFacilityUser = false;
+
+    string facilityLink = "/facility/0";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        isAnalystGroup = !isFacilityUser;
+
+        var appUser = await UserManager.GetUserAsync(user);
+        if (appUser != null && appUser.FacilityId > 0)
+        {
+            facilityLink = $"/facility/{appUser.FacilityId}";
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Identity
+@using UPHC.SurveillanceDashboard.Models
+
+@inject UserManager<ApplicationUser> UserManager
+
+<div class="sidebar-container">
+
+    <!-- ========================= -->
+    <!-- 🧬 SIDEBAR HEADER -->
+    <!-- ========================= -->
+
+    <div class="sidebar-header mb-4">
+
+        <div class="sidebar-logo">
+            🧬
+        </div>
+
+        <div>
+            <div class="sidebar-title">
+                IDSP
+            </div>
+
+            <div class="sidebar-subtitle">
+                Surveillance Portal
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- 📊 DASHBOARD -->
+    <!-- ========================= -->
+
+    <a href="/dashboard"
+           class="modern-nav-btn dashboard-btn mb-3">
+
+        <span>📊</span>
+        <span>Dashboard</span>
+
+    </a>
+
+    <!-- ========================= -->
+    <!-- 🏥 FACILITY USERS -->
+    <!-- ========================= -->
+    @if (isFacilityUser)
+    {
+        <a href="/patiententry"
+               class="modern-nav-btn patient-btn mb-3">
+
+            <span>📝</span>
+            <span>Patient Entry</span>
+
+        </a>
+
+        <a href="@facilityRecordsUrl"
+               class="modern-nav-btn records-btn mb-3">
+
+            <span>🏥</span>
+            <span>Case Records</span>
+
+        </a>
+    }
+
+    <!-- ========================= -->
+    <!-- 🧪 ANALYST GROUP -->
+    <!-- ========================= -->
+    @if (isAnalystGroup)
+    {
+        <a href="/records"
+               class="modern-nav-btn analyst-btn mb-3">
+
+            <span>📂</span>
+            <span>Records</span>
+
+        </a>
+
+        <a href="/uphc-list"
+               class="modern-nav-btn uphc-btn mb-3">
+
+            <span>🏢</span>
+            <span>UPHC List</span>
+
+        </a>
+    }
+
+</div>
+
+@code {
+
+    bool isAnalystGroup = false;
+    bool isFacilityUser = false;
+
+    string facilityRecordsUrl = "/facilityRecords";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState =
+            await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        // =========================
+        // FACILITY USER CHECK
+        // =========================
+
+        isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        // =========================
+        // ANALYST GROUP
+        // =========================
+
+        isAnalystGroup = !isFacilityUser;
+
+        // =========================
+        // FACILITY ID URL
+        // =========================
+
+        if (isFacilityUser)
+        {
+            var appUser =
+                await UserManager.GetUserAsync(user);
+
+            if (appUser != null && appUser.FacilityId != null)
+            {
+                facilityRecordsUrl =
+                    $"/facility/{appUser.FacilityId}";
+            }
+        }
+    }
+}
+
+ *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+
+@using UPHC.SurveillanceDashboard.Models
+
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserManager<ApplicationUser> UserManager
+
+<div class="nav flex-column p-2 bg-light shadow-sm"
+     style="width:220px; min-height:100vh;">
+
+    
+    <!-- DASHBOARD -->
+    <a href="/dashboard" class="nav-link">
+        📊 Dashboard
+    </a>
+
+    @if (isFacilityUser)
+    {
+        <!-- PATIENT ENTRY -->
+        <a href="/patiententry" class="nav-link">
+            📝 Patient Entry
+        </a>
+
+        <!-- FACILITY CASE RECORDS -->
+        <a href="@facilityRecordsUrl" class="nav-link">
+            🏥 Case Records
+        </a>
+    }
+
+    @if (isAnalystGroup)
+    {
+        <!-- RECORDS -->
+        <a href="/records" class="nav-link">
+            📂 Records
+        </a>
+
+        <!-- UPHC LIST -->
+        <a href="/uphc-list" class="nav-link">
+            🏥 UPHC List
+        </a>
+    }
+    
+
+</div>
+
+@code {
+
+
+bool isAnalystGroup = false;
+
+    bool isFacilityUser = false;
+
+    string facilityRecordsUrl = "/dashboard";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState =
+            await AuthStateProvider.GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        // ✅ Facility Users
+        isFacilityUser =
+            user.IsInRole("UPHCUser") ||
+            user.IsInRole("CHCUser") ||
+            user.IsInRole("UHWCUser");
+
+        // ✅ Analyst Group
+        isAnalystGroup = !isFacilityUser;
+
+        // ✅ Generate facility URL dynamically
+        if (isFacilityUser)
+        {
+            var appUser =
+                await UserManager.GetUserAsync(user);
+
+            if (appUser?.FacilityId != null)
+            {
+                facilityRecordsUrl =
+                    $"/facility/{appUser.FacilityId}";
+            }
+        }
+    }
+
+
+} *@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@* @using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Identity
+@using UPHC.SurveillanceDashboard.Models
+
+@inject UserManager<ApplicationUser> UserManager
+
 
 <div class="nav flex-column p-2 bg-light" style="width:220px; min-height:100vh;">
 
@@ -37,7 +483,7 @@
         // ✅ Analyst group = everyone except facility users
         isAnalystGroup = !isFacilityUser;
     }
-}
+} *@
 
 
 
@@ -103,7 +549,7 @@
             </NavLink>
         </div>
     </nav>
-</div> *@*@*@
+</div> 
 
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider

@@ -1,7 +1,1198 @@
 ﻿
+/* =========================================================
+🌐 GLOBAL UI
+========================================================= */
 
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", sans-serif;
+    font-size: 1.02rem;
+    overflow-x: hidden;
+    background: linear-gradient(180deg,#eef4ff,#f8fbff);
+    background-attachment: fixed;
+    color: #1e293b ;
+}
+
+    /* Animated weather style background */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at top left, rgba(255,255,255,0.55), transparent 40%), radial-gradient(circle at bottom right, rgba(255,255,255,0.35), transparent 35%), linear-gradient(135deg, #7dd3fc 0%, #60a5fa 25%, #818cf8 55%, #c084fc 100%);
+        z-index: -2;
+    }
+
+    body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        backdrop-filter: blur(18px);
+        z-index: -1;
+    }
+
+/* =========================================================
+🧊 GLASS EFFECT
+========================================================= */
+
+.glass-card {
+    background: rgba(255,255,255,0.22);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    padding: 22px;
+    transition: all 0.35s ease;
+    animation: fadeInUp 0.45s ease;
+}
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 18px 42px rgba(0,0,0,0.12);
+    }
+
+/* =========================================================
+🌈 LOGIN PAGE
+========================================================= */
 
 .login-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 25px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 520px;
+    background: rgba(255,255,255,0.18);
+    backdrop-filter: blur(24px);
+    border-radius: 28px;
+    padding: 42px;
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 16px 45px rgba(0,0,0,0.12);
+}
+
+    .login-card h2 {
+        font-weight: 700;
+        color: white;
+    }
+
+    .login-card .form-control {
+        border-radius: 16px;
+        padding: 14px;
+        border: none;
+        background: rgba(255,255,255,0.75);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    }
+
+        .login-card .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(255,255,255,0.35);
+            border: none;
+        }
+
+    .login-card .btn-primary {
+        border: none;
+        border-radius: 16px;
+        padding: 13px;
+        font-weight: 700;
+        background: linear-gradient(135deg,#2563eb,#7c3aed);
+        transition: 0.3s;
+    }
+
+        .login-card .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(59,130,246,0.35);
+        }
+
+/* =========================================================
+🌈 MODERN SIDEBAR
+========================================================= */
+
+.sidebar-container {
+    width: 260px;
+    min-height: 100vh;
+    padding: 18px 16px;
+    background: rgba(15,23,42,0.82);
+    backdrop-filter: blur(18px);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 8px 0 30px rgba(0,0,0,0.12);
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-logo {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: linear-gradient(135deg,#38bdf8,#6366f1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.7rem;
+    box-shadow: 0 10px 24px rgba(59,130,246,0.35);
+}
+
+.sidebar-title {
+    color: white;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.sidebar-subtitle {
+    color: #cbd5e1;
+    font-size: 0.82rem;
+}
+
+/* =========================================================
+🎨 NAVIGATION BUTTONS
+========================================================= */
+
+.modern-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+    padding: 15px 18px;
+    border-radius: 18px;
+    text-decoration: none;
+    color: white !important;
+    font-weight: 600;
+    transition: all 0.28s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+    .modern-nav-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(255,255,255,0.08);
+        opacity: 0;
+        transition: 0.25s;
+    }
+
+    .modern-nav-btn:hover::before {
+        opacity: 1;
+    }
+
+    .modern-nav-btn:hover {
+        transform: translateX(6px) scale(1.02);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.18);
+    }
+
+/* =========================================================
+🌈 BUTTON THEMES
+========================================================= */
+
+.dashboard-btn {
+    background: linear-gradient(135deg,#3b82f6,#06b6d4);
+}
+
+.patient-btn {
+    background: linear-gradient(135deg,#10b981,#14b8a6);
+}
+
+.records-btn {
+    background: linear-gradient(135deg,#f59e0b,#ef4444);
+}
+
+.analyst-btn {
+    background: linear-gradient(135deg,#8b5cf6,#6366f1);
+}
+
+.uphc-btn {
+    background: linear-gradient(135deg,#ec4899,#f43f5e);
+}
+
+/* =========================================================
+🌈 DASHBOARD CONTAINER
+========================================================= */
+
+.dashboard-container {
+    min-height: 100vh;
+    padding: 24px;
+    background: transparent;
+}
+
+/* =========================================================
+📊 DASHBOARD STAT CARDS
+========================================================= */
+
+.gradient-blue {
+    background: linear-gradient(135deg,#2563eb,#60a5fa);
+    color: white;
+}
+
+.gradient-red {
+    background: linear-gradient(135deg,#ef4444,#f87171);
+    color: white;
+}
+
+.gradient-orange {
+    background: linear-gradient(135deg,#f59e0b,#fb923c);
+    color: white;
+}
+
+/* =========================================================
+📦 MINI CARDS
+========================================================= */
+
+.mini-card {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(10px);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.18);
+}
+
+    .mini-card.red {
+        border-left: 6px solid #ef4444;
+    }
+
+    .mini-card.orange {
+        border-left: 6px solid #f59e0b;
+    }
+
+/* =========================================================
+👤 PROFILE AVATAR
+========================================================= */
+
+.profile-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255,255,255,0.85);
+    transition: 0.25s;
+    cursor: pointer;
+}
+
+    .profile-avatar:hover {
+        transform: scale(1.08);
+    }
+
+/* =========================================================
+🔔 NOTIFICATION
+========================================================= */
+
+.notification-count {
+    position: absolute;
+    top: -8px;
+    right: -18px;
+    background: linear-gradient(135deg,#2563eb,#7c3aed);
+    color: white;
+    border-radius: 999px;
+    min-width: 32px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+}
+
+.notification-dot {
+    position: absolute;
+    bottom: 2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ef4444;
+    border: 2px solid white;
+}
+
+.notification-dropdown {
+    width: 340px;
+    max-height: 420px;
+    overflow-y: auto;
+    border-radius: 20px;
+    border: none;
+    padding: 10px;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    transform: translateX(-240px);
+}
+
+.notification-item {
+    padding: 12px;
+    border-radius: 14px;
+    transition: 0.25s;
+}
+
+    .notification-item:hover {
+        background: rgba(255,255,255,0.6);
+        transform: translateX(4px);
+    }
+
+/* =========================================================
+📈 CHARTS
+========================================================= */
+
+#trendChart,
+#diseasePieChart,
+#facilityBarChart {
+    width: 100% !important;
+    background: transparent;
+}
+
+#trendChart {
+    height: 320px !important;
+}
+
+#diseasePieChart {
+    height: 320px !important;
+}
+
+#facilityBarChart {
+    height: 360px !important;
+}
+
+/* =========================================================
+✨ ANIMATIONS
+========================================================= */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-blink {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.2;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* =========================================================
+🚨 FLASH ALERT
+========================================================= */
+
+.flash-alert {
+    animation: flash 1.5s ease-in-out 2;
+}
+
+@keyframes flash {
+    0% {
+        background-color: rgba(255,0,0,0.08);
+    }
+
+    50% {
+        background-color: rgba(255,0,0,0.18);
+    }
+
+    100% {
+        background-color: transparent;
+    }
+}
+
+/* =========================================================
+📺 LARGE SCREEN
+========================================================= */
+
+@media (min-width: 1400px) {
+
+    #trendChart {
+        height: 460px !important;
+    }
+
+    #diseasePieChart {
+        height: 430px !important;
+    }
+
+    #facilityBarChart {
+        height: 520px !important;
+    }
+
+    .profile-avatar {
+        width: 72px;
+        height: 72px;
+    }
+}
+
+/* =========================================================
+📱 MOBILE
+========================================================= */
+
+/*@media (max-width: 768px) {
+
+    .sidebar-container {
+        width: 100%;
+        min-height: auto;
+        border-right: none;
+    }
+
+    .modern-nav-btn {
+        font-size: 0.95rem;
+    }
+
+    #trendChart {
+        height: 250px !important;
+    }
+
+    #facilityBarChart {
+        height: 280px !important;
+    }
+}*/
+
+
+
+/* =========================================================
+📱 RESPONSIVE FIXES
+========================================================= */
+
+/* Mobile */
+@media (max-width: 768px) {
+
+    /* HEADER */
+    .header-title {
+        font-size: 1.5rem !important;
+        line-height: 1.2;
+    }
+
+    .header-subtitle {
+        font-size: 1rem !important;
+    }
+
+    .header-ministry {
+        font-size: 0.9rem !important;
+    }
+
+    /* Reduce logo size */
+    .gov-logo {
+        width: 55px !important;
+    }
+
+    .idsp-logo {
+        width: 70px !important;
+    }
+
+    .profile-avatar {
+        width: 45px !important;
+        height: 45px !important;
+    }
+
+    /* SIDEBAR */
+    .sidebar-container {
+        width: 100% !important;
+        min-height: auto !important;
+        border-radius: 0 0 20px 20px;
+    }
+
+    /* DASHBOARD */
+    .dashboard-container {
+        padding: 12px !important;
+    }
+
+    /* CARDS */
+    .glass-card {
+        margin-bottom: 15px;
+    }
+
+    /* Charts */
+    #trendChart,
+    #diseasePieChart,
+    #facilityBarChart {
+        height: 260px !important;
+    }
+}
+
+/* Tablet */
+@media (max-width: 992px) {
+
+    .sidebar-container {
+        width: 220px;
+    }
+
+    .header-title {
+        font-size: 2rem;
+    }
+}
+
+/* =========================
+📱 MOBILE BOTTOM NAV
+========================= */
+
+.mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 65px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+}
+
+.mobile-nav-item {
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+    .mobile-nav-item span {
+        font-size: 0.7rem;
+    }
+
+    .mobile-nav-item:hover {
+        transform: scale(1.1);
+        color: #38bdf8;
+    }
+
+/* Add bottom padding so content not hidden */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding-bottom: 80px !important;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* =========================================================
+🌐 GLOBAL UI
+========================================================= */
+
+/*body {
+    font-family: "Segoe UI", sans-serif;
+    font-size: 1.05rem;
+    background: #f8fafc;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+}
+
+table {
+    font-size: 1rem;
+}*/
+
+/* =========================================================
+🌈 LOGIN PAGE
+========================================================= */
+
+/*.login-page {
+     min-height: 100vh;
+    background: linear-gradient( 135deg, #dbeafe, #eef2ff, #f8fafc );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    
+}
+
+.login-card {
+     width: 100%;
+    max-width: 520px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(16px);
+    border-radius: 28px;
+    padding: 42px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.10);
+    animation: fadeInUp 0.5s ease;
+    
+}
+
+    .login-card .form-control {
+         border-radius: 14px;
+        padding: 14px;
+        border: 1px solid #dbeafe;
+        transition: 0.2s;
+        
+    }
+
+        .login-card .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.2rem rgba(59,130,246,0.15);
+            
+        }
+
+    .login-card .btn-primary {
+         border-radius: 14px;
+        background: linear-gradient( 135deg, #2563eb, #1d4ed8 );
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        transition: 0.25s;
+        
+    }
+
+        .login-card .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(37,99,235,0.35);
+            
+        }*/
+
+/* =========================================================
+🌈 MODERN SIDEBAR
+========================================================= */
+
+/*.sidebar-container {
+     width: 260px;
+    min-height: 100vh;
+    background: linear-gradient( 180deg, #0f172a, #111827, #1e293b );
+    padding: 20px 16px;
+    box-shadow: 4px 0 25px rgba(0,0,0,0.15);
+    
+}
+
+.sidebar-header {
+     display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    
+}
+
+.sidebar-logo {
+     width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: linear-gradient( 135deg, #3b82f6, #06b6d4 );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    box-shadow: 0 8px 20px rgba(59,130,246,0.35);
+   
+}
+
+.sidebar-title {
+     color: white;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    
+}
+
+.sidebar-subtitle {
+     color: #94a3b8;
+    font-size: 0.85rem;
+    
+}*/
+
+/* =========================================================
+🎨 NAVIGATION BUTTONS
+========================================================= */
+
+/*.modern-nav-btn {
+     display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+    
+}
+
+    .modern-nav-btn:hover {
+         transform: translateX(6px) scale(1.02);
+        color: white;
+        
+    }*/
+
+/* =========================================================
+🌈 BUTTON THEMES
+========================================================= */
+
+/*.dashboard-btn {
+     background: linear-gradient( 135deg, #2563eb, #06b6d4 );
+    
+}
+
+    .dashboard-btn:hover {
+         box-shadow: 0 10px 22px rgba(37,99,235,0.4);
+        
+    }
+
+.patient-btn {
+     background: linear-gradient( 135deg, #10b981, #14b8a6 );
+    
+}
+
+    .patient-btn:hover {
+         box-shadow: 0 10px 22px rgba(16,185,129,0.4);
+        
+    }
+
+.records-btn {
+     background: linear-gradient( 135deg, #f59e0b, #ef4444 );
+    
+}
+
+    .records-btn:hover {
+         box-shadow: 0 10px 22px rgba(245,158,11,0.4);
+        
+    }
+
+.analyst-btn {
+     background: linear-gradient( 135deg, #8b5cf6, #6366f1 );
+    
+}
+
+    .analyst-btn:hover {
+         box-shadow: 0 10px 22px rgba(139,92,246,0.4);
+        
+    }
+
+.uphc-btn {
+     background: linear-gradient( 135deg, #ec4899, #f43f5e );
+   
+}
+
+    .uphc-btn:hover {
+         box-shadow: 0 10px 22px rgba(236,72,153,0.4);
+       
+    }*/
+
+/* =========================================================
+👤 PROFILE SECTION
+========================================================= */
+
+/*.profile-avatar {
+     width: 52px;
+    height: 52px;
+    cursor: pointer;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid white;
+    transition: 0.2s;
+    
+}
+
+    .profile-avatar:hover {
+         transform: scale(1.06);
+        
+    }*/
+
+/* =========================================================
+🔔 NOTIFICATION COUNT
+========================================================= */
+
+/*.notification-count {
+     position: absolute;
+    top: -8px;
+    right: -18px;
+    background: #2563eb;
+    color: white;
+    border-radius: 999px;
+    min-width: 32px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 0 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+   
+}*/
+
+/* =========================================================
+🔴 LIVE DOT
+========================================================= */
+
+/*.notification-dot {
+     position: absolute;
+    bottom: 2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid white;
+    z-index: 11;
+    
+}*/
+
+/* =========================================================
+✨ BLINK ANIMATION
+========================================================= */
+
+/*.animate-blink {
+     animation: blink 1s infinite;
+    
+}
+
+@keyframes blink {
+
+     0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+
+   
+}*/
+
+/* =========================================================
+🔽 DROPDOWN
+========================================================= */
+
+/*.notification-dropdown {
+     right: 0;
+    left: auto;
+    width: 340px;
+    max-height: 420px;
+    overflow-y: auto;
+    border: none;
+    border-radius: 18px;
+    padding: 10px;
+    margin-top: 12px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.14);
+    
+}*/
+
+/* =========================================================
+🔔 NOTIFICATION ITEM
+========================================================= */
+
+/*.notification-item {
+     border-radius: 14px;
+    margin-bottom: 8px;
+    transition: 0.2s;
+    padding: 10px;
+    
+}
+
+    .notification-item:hover {
+         background: #f1f5f9;
+        transform: translateX(4px);
+        
+    }*/
+
+/* =========================================================
+🌈 DASHBOARD
+========================================================= */
+
+/*.dashboard-container {
+     background: linear-gradient( 135deg, #eef2ff, #f8fafc );
+    min-height: 100vh;
+    padding: 20px;
+    
+}*/
+
+/* =========================================================
+🧊 GLASS CARD
+========================================================= */
+
+/*.glass-card {
+     background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transition: 0.3s;
+    animation: fadeInUp 0.5s ease;
+    
+}
+
+    .glass-card:hover {
+         transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+       
+    }*/
+
+/* =========================================================
+✨ FADE ANIMATION
+========================================================= */
+
+/*@keyframes fadeInUp {
+
+     from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    
+}*/
+
+/* =========================================================
+🌈 GRADIENT THEMES
+========================================================= */
+
+/*.gradient-blue {
+     background: linear-gradient( 135deg, #4f46e5, #3b82f6 );
+    
+}
+
+.gradient-red {
+     background: linear-gradient( 135deg, #ef4444, #dc2626 );
+   
+}
+
+.gradient-orange {
+     background: linear-gradient( 135deg, #f59e0b, #f97316 );
+    
+}*/
+
+/* =========================================================
+📦 MINI CARDS
+========================================================= */
+
+/*.mini-card {
+     border-radius: 14px;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 10px;
+    
+}
+
+    .mini-card.red {
+         border-left: 5px solid #dc2626;
+       
+    }
+
+    .mini-card.orange {
+         border-left: 5px solid #f59e0b;
+        
+    }*/
+
+/* =========================================================
+📈 CHARTS
+========================================================= */
+
+/*#trendChart,
+#diseasePieChart,
+#facilityBarChart {
+     width: 100% !important;
+    
+}
+
+#trendChart {
+     height: 320px !important;
+    
+}
+
+#diseasePieChart {
+     height: 320px !important;
+    
+}
+
+#facilityBarChart {
+     height: 360px !important;
+    
+}*/
+
+/* =========================================================
+📺 LARGE DISPLAY SUPPORT
+========================================================= */
+
+/*@media (min-width: 1400px) {
+
+    
+    #trendChart {
+        height: 450px !important;
+    }
+
+    #diseasePieChart {
+        height: 420px !important;
+    }
+
+    #facilityBarChart {
+        height: 520px !important;
+    }
+
+    .profile-avatar {
+        width: 70px;
+        height: 70px;
+    }
+
+    .notification-dropdown {
+        width: 420px;
+        font-size: 1.15rem;
+    }
+
+   
+}*/
+
+/* =========================================================
+📱 MOBILE
+========================================================= */
+
+/*@media (max-width: 576px) {
+
+    
+    #trendChart {
+        height: 240px !important;
+    }
+
+    #diseasePieChart {
+        height: 260px !important;
+    }
+
+    #facilityBarChart {
+        height: 280px !important;
+    }
+
+    .sidebar-container {
+        width: 100%;
+        min-height: auto;
+    }
+
+   
+}*/
+
+/* =========================================================
+🚨 FLASH ALERT
+========================================================= */
+
+/*.flash-alert {
+     animation: flash 1.5s ease-in-out 2;
+    
+}
+
+@keyframes flash {
+
+     0% {
+        background-color: #ffe5e5;
+    }
+
+    50% {
+        background-color: #ffcccc;
+    }
+
+    100% {
+        background-color: inherit;
+    }
+
+   
+}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*.login-page {
     min-height: 100vh;
     background: linear-gradient( 135deg, #e0f2fe, #f8fafc, #eef2ff );
     display: flex;
@@ -35,11 +1226,11 @@
 
         .login-card .btn-primary:hover {
             transform: translateY(-2px);
-        }
+        }*/
 
 
 /* 👤 PROFILE IMAGE */
-.profile-avatar {
+/*.profile-avatar {
     width: 52px;
     height: 52px;
     cursor: pointer;
@@ -50,10 +1241,10 @@
 
     .profile-avatar:hover {
         transform: scale(1.05);
-    }
+    }*/
 
 /* 🔔 NOTIFICATION COUNT */
-.notification-count {
+/*.notification-count {
     position: absolute;
     top: -8px;
     right: -18px;
@@ -70,10 +1261,10 @@
     padding: 0 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     z-index: 10;
-}
+}*/
 
 /* 🔴 LIVE DOT */
-.notification-dot {
+/*.notification-dot {
     position: absolute;
     bottom: 2px;
     right: -2px;
@@ -83,10 +1274,10 @@
     border-radius: 50%;
     border: 2px solid white;
     z-index: 11;
-}
+}*/
 
 /* 🔽 DROPDOWN */
-.notification-dropdown {
+/*.notification-dropdown {
     right: 0;
     left: auto;
     width: 320px;
@@ -97,10 +1288,10 @@
     padding: 10px;
     margin-top: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-}
+}*/
 
 /* 🔔 NOTIFICATION ITEM */
-.notification-item {
+/*.notification-item {
     border-radius: 12px;
     margin-bottom: 6px;
     transition: 0.2s;
@@ -108,10 +1299,10 @@
 
     .notification-item:hover {
         background: #f1f5f9;
-    }
+    }*/
 
 /* 📺 LARGE TV SUPPORT */
-@media (min-width: 1600px) {
+/*@media (min-width: 1600px) {
 
     .profile-avatar {
         width: 70px;
@@ -133,7 +1324,7 @@
         width: 420px;
         font-size: 1.2rem;
     }
-}
+}*/
 
 
 
@@ -164,7 +1355,7 @@
 
 
 /* 🔴 Blinking notification dot */
-.animate-blink {
+/*.animate-blink {
     animation: blink 1s infinite;
 }
 
@@ -180,22 +1371,22 @@
     100% {
         opacity: 1;
     }
-}
+}*/
 
 /* 🔽 Dropdown */
-.dropdown-menu {
+/*.dropdown-menu {
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     border-radius: 10px;
-}
+}*/
 
 /* 👤 Profile image hover */
-img.rounded-circle:hover {
+/*img.rounded-circle:hover {
     transform: scale(1.05);
     transition: 0.2s;
-}
+}*/
 
 /* 📊 General UI */
-body {
+/*body {
     font-size: 1.2rem;
 }
 
@@ -209,10 +1400,10 @@ table {
 
 .card {
     border-radius: 15px;
-}
+}*/
 
 /* 🏥 Facility / UPHC cards */
-.uphc-card {
+/*.uphc-card {
     cursor: pointer;
     transition: 0.2s;
     border-radius: 15px;
@@ -222,17 +1413,17 @@ table {
     .uphc-card:hover {
         transform: scale(1.05);
         background-color: #f1f5f9;
-    }
+    }*/
 
 /* 🌈 Dashboard background */
-.dashboard-container {
+/*.dashboard-container {
     background: linear-gradient(135deg, #eef2ff, #f8fafc);
     min-height: 100vh;
     padding: 20px;
-}
+}*/
 
 /* 🧊 Glass card */
-.glass-card {
+/*.glass-card {
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     border-radius: 16px;
@@ -256,10 +1447,10 @@ table {
         opacity: 1;
         transform: translateY(0);
     }
-}
+}*/
 
 /* 🎨 Gradients */
-.gradient-blue {
+/*.gradient-blue {
     background: linear-gradient(135deg, #4f46e5, #3b82f6);
 }
 
@@ -269,10 +1460,10 @@ table {
 
 .gradient-orange {
     background: linear-gradient(135deg, #f59e0b, #f97316);
-}
+}*/
 
 /* 📦 Mini cards */
-.mini-card {
+/*.mini-card {
     border-radius: 12px;
     padding: 15px;
     background: white;
@@ -285,10 +1476,10 @@ table {
 
     .mini-card.orange {
         border-left: 5px solid #f59e0b;
-    }
+    }*/
 
 /* 📈 Trend Chart */
-#trendChart {
+/*#trendChart {
     width: 100% !important;
     height: 300px !important;
 }
@@ -303,10 +1494,10 @@ table {
     #trendChart {
         height: 250px !important;
     }
-}
+}*/
 
 /* 🥧 Pie Chart */
-#diseasePieChart {
+/*#diseasePieChart {
     width: 100% !important;
     height: 300px !important;
 }
@@ -321,10 +1512,10 @@ table {
     #diseasePieChart {
         height: 260px !important;
     }
-}
+}*/
 
 /* 📊 Facility Bar Chart (FIXED) */
-#facilityBarChart {
+/*#facilityBarChart {
     width: 100% !important;
     height: 350px !important;
 }
@@ -343,9 +1534,9 @@ table {
 
 
 
-.flash-alert {
+.flash-alert {*/
    /* animation: flash 1s ease 3;*/
-    animation: flash 1.5s ease-in-out 2;
+    /*animation: flash 1.5s ease-in-out 2;
 }
 
 @keyframes flash {
@@ -360,7 +1551,7 @@ table {
     100% {
         background-color: inherit;
     }
-}
+}*/
 
 
 

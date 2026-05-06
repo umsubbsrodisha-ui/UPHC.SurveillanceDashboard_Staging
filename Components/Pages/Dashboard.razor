@@ -18,27 +18,27 @@
 
 <div class="container-fluid dashboard-container">
 
-    ```
+    
     <h4 class="mb-4 fw-bold">🧬 Surveillance Dashboard</h4>
 
     <!-- SUMMARY -->
     <div class="row g-3 mb-4">
 
-        <div class="col-md-4">
+        <div class="col-sm-12 col-md-6 col-xl-4">
             <div class="glass-card gradient-blue text-white">
                 <h6>Total Cases (14 days)</h6>
                 <h1>@totalPatients</h1>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-sm-12 col-md-6 col-xl-4">
             <div class="glass-card gradient-red text-white">
                 <h6>Confirmed Outbreaks</h6>
                 <h1>@outbreaks.Count</h1>
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-sm-12 col-md-6 col-xl-4">
             <div class="glass-card gradient-orange text-white">
                 <h6>Suspected Clusters</h6>
                 <h1>@suspectedClusters.Count</h1>
@@ -240,7 +240,7 @@ HubConnection? hubConnection;
             .Where(c =>
                 c.OnsetDate >= fromDate.Date &&
                 c.IsCommunicable &&
-                c.Status == CaseStatus.Suspected)
+                c.Status == CaseStatus.Suspected) 
             .GroupBy(c => new
             {
                 c.DiseaseName,
