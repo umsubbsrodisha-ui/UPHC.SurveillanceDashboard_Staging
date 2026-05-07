@@ -57,7 +57,7 @@ else
 @code {
     [Parameter] public int id { get; set; }
 
-    List<CaseRecord> cases;
+    List<CaseRecord>? cases; //changes made due to warning "Dereference of a possibly null reference" in line 24 and 25
     string FacilityName = "";
     string FacilityAddress = "";
 

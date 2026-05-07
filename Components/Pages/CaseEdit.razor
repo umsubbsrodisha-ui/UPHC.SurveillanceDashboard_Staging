@@ -48,19 +48,38 @@ else
 
         @if (!string.IsNullOrEmpty(message))
         {
-            <div class="alert alert-info mt-3">@message</div>
+            <div class="custom-alert-overlay">
+                <div class="custom-alert-box @(success ? "success" : "error")">
+
+                    <div class="alert-icon">
+                        @(success ? "✔️" : "❌")
+                    </div>
+
+                    <div class="alert-text">
+                        @message
+                    </div>
+
+                    <button class="alert-close" @onclick="CloseAlert">OK</button>
+
+                </div>
+            </div>
         }
+
+       @*  @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-info mt-3">@message</div>
+        } *@
 
     </div>
 }
 
 @code {
-
+    bool success = false;
     CaseStatus? originalStatus;
     [Parameter] public int id { get; set; }
 
     CaseRecord? caseRecord;
-    string message = "";
+    string? message = "";
 
 
     protected override async Task OnParametersSetAsync()
@@ -123,22 +142,33 @@ else
             if (existing.Status == CaseStatus.Confirmed)
             {
                 await NotifService.SendNotification(existing.Id,NotificationType.ConfirmedPositive);
+                message = $"Case Status Updated. ALERT Sent For {caseRecord.DiseaseName}!";
             }
             else if (existing.Status == CaseStatus.Negative)
             {
                 await NotifService.SendNotification(existing.Id,NotificationType.ConfirmedNegative);
-            }
+                message = $"Case Status Updated.";
 
+            }
+            success = true;
             //  DASHBOARD REFRESH
             await NotifService.NotifyDashboardUpdate();
+           
 
-            message = "Case updated successfully";
+           
         }
         else
         {
             message = "No changes made";
         }
 
+        
+    }
+
+
+    void CloseAlert()
+    {
+        message = null;
         Navigation.NavigateTo("/dashboard");
     }
 
